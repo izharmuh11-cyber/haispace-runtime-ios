@@ -51,6 +51,7 @@ jobs:
             -scheme HaispaceRuntime \
             -sdk iphoneos \
             -configuration Release \
+            -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
@@ -66,7 +67,7 @@ jobs:
       - name: Create IPA for AltStore
         run: |
           # The app bundle is located in the build directory. Let's find it.
-          APP_PATH=$(find build/Release-iphoneos -name "HaiBooth.app" -o -name "HaispaceRuntime.app" | head -n 1)
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "HaiBooth.app" -o -name "HaispaceRuntime.app" | head -n 1)
           if [ -z "$APP_PATH" ]; then
             echo "Error: .app file not found"
             exit 1
