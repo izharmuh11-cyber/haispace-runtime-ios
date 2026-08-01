@@ -36,17 +36,17 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
     }
     
     public func startSession(sessionId: SessionID) async throws {
-        RuntimeTimelineLogger.shared.logEvent("CAMERA SESSION START", payload: sessionId.rawValue)
+        await RuntimeTimelineLogger.shared.logEvent("CAMERA SESSION START", payload: sessionId.rawValue)
         await controller.start()
     }
     
     public func stopSession() async {
-        RuntimeTimelineLogger.shared.logEvent("CAMERA SESSION STOP")
+        await RuntimeTimelineLogger.shared.logEvent("CAMERA SESSION STOP")
         await controller.stop()
     }
     
     public func requestCapture(correlationId: CorrelationID) async throws {
-        RuntimeTimelineLogger.shared.logEvent("CAMERA CAPTURE REQUESTED", payload: correlationId.rawValue)
+        await RuntimeTimelineLogger.shared.logEvent("CAMERA CAPTURE REQUESTED", payload: correlationId.rawValue)
         
         let path = try await capturePipeline.capturePhoto()
         metrics = CameraMetrics(totalCaptures: metrics.totalCaptures + 1)
@@ -54,6 +54,6 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
         // Simpan path ke CapturedPhotoStore agar View bisa mengaksesnya
         await CapturedPhotoStore.shared.appendCapture(path: path)
         
-        RuntimeTimelineLogger.shared.logEvent("CAMERA CAPTURE SUCCESS", payload: path)
+        await RuntimeTimelineLogger.shared.logEvent("CAMERA CAPTURE SUCCESS", payload: path)
     }
 }
