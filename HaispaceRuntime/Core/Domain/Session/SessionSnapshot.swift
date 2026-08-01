@@ -102,3 +102,91 @@ extension SessionSnapshot {
         return self
     }
 }
+
+
+// MARK: - SessionSnapshotStore
+
+/// Simpan dan load SessionSnapshot ke/dari disk secara atomik.
+public enum SessionSnapshotStore {
+
+    private static let snapshotDir: URL = {
+        let base = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dir = base.appendingPathComponent("session_snapshots", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }()
+
+    private static let encoder: JSONEncoder = {
+        let e = JSONEncoder()
+        e.dateEncodingStrategy = .iso8601
+        e.outputFormatting = [.prettyPrinted, .withoutEscapingSlashes]
+        return e
+    }()
+
+    private static let decoder: JSONDecoder = {
+        let d = JSONDecoder()
+        d.dateDecodingStrategy = .iso8601
+        return d
+    }()
+
+    // MARK: - Write (Atomic)
+
+    /// Simpan snapshot secara atomik (tmp → rename).
+    /// Thread-safe: tulis ke file tmp dulu, lalu atomic rename ke path final.
+    public static func save(_ snapshot: SessionSnapshot) {
+        guard let data = try? encoder.encode(snapshot) else { return }
+
+        let finalURL = snapshotURL(for: snapshot.sessionId)
+        let tmpURL = finalURL.appendingPathExtension("tmp")
+
+        do {
+            try data.write(to: tmpURL, options: .atomic)
+            // Atomic rename — jika crash di sini, tmp file tidak dibaca
+            _ = try FileManager.default.replaceItemAt(finalURL, withItemAt: tmpURL)
+        } catch {
+            // Fallback: direct write
+            try? data.write(to: finalURL, options: .atomic)
+        }
+    }
+
+    // MARK: - Read
+
+    public static func load(sessionId: String) -> SessionSnapshot? {
+        let url = snapshotURL(for: sessionId)
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return try? decoder.decode(SessionSnapshot.self, from: data)
+    }
+
+    // MARK: - Delete (setelah session complete)
+
+    public static func delete(sessionId: String) {
+        let url = snapshotURL(for: sessionId)
+        try? FileManager.default.removeItem(at: url)
+        // Juga hapus tmp jika ada
+        try? FileManager.default.removeItem(at: url.appendingPathExtension("tmp"))
+    }
+
+    // MARK: - Find All Orphans
+
+    /// Semua snapshot yang masih ada = sesi yang belum selesai (orphaned jika app direstart)
+    public static func allOrphanedSnapshots() -> [SessionSnapshot] {
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: snapshotDir,
+            includingPropertiesForKeys: nil
+        ) else { return [] }
+
+        return files
+            .filter { $0.pathExtension == "json" }
+            .compactMap { url -> SessionSnapshot? in
+                guard let data = try? Data(contentsOf: url) else { return nil }
+                return try? decoder.decode(SessionSnapshot.self, from: data)
+            }
+            .sorted { $0.sessionStartedAt < $1.sessionStartedAt }
+    }
+
+    // MARK: - Private
+
+    private static func snapshotURL(for sessionId: String) -> URL {
+        snapshotDir.appendingPathComponent("\(sessionId).json")
+    }
+}
