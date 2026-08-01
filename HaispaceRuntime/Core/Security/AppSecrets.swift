@@ -25,22 +25,22 @@ enum AppSecretConfig {
 
     struct R2 {
         /// Account ID Cloudflare
-        static var accountID: String { required("R2_ACCOUNT_ID") }
+        static var accountID: String { "66c40e0caaaa333ca0f4977bf32be2a7" }
 
         /// Access Key ID untuk S3-compatible API
-        static var accessKeyID: String { required("R2_ACCESS_KEY_ID") }
+        static var accessKeyID: String { "ccf641ce7fee6d2f1ec4c07a927f0b9c" }
 
-        /// Secret Key untuk signing — TIDAK boleh di-log
-        static var secretKey: String { required("R2_SECRET_KEY") }
+        /// Secret Key untuk signing
+        static var secretKey: String { "abd1bc78a2c92791610e68cf4c0d253a56090740a67eec5462f667c91858eb34" }
 
         /// Nama bucket R2
-        static var bucket: String { required("R2_BUCKET") }
+        static var bucket: String { "haispaceproject" }
 
-        /// Base URL publik untuk mengakses file yang sudah diupload
-        static var publicBaseURL: String { required("R2_PUBLIC_BASE_URL") }
+        /// Base URL publik
+        static var publicBaseURL: String { "https://r2.haispace.id" }
 
-        /// Endpoint S3-compatible untuk upload
-        static var endpoint: String { required("R2_ENDPOINT") }
+        /// Endpoint S3-compatible
+        static var endpoint: String { "66c40e0caaaa333ca0f4977bf32be2a7.r2.cloudflarestorage.com" }
     }
 
     // MARK: - QR Payload
