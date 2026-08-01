@@ -14,6 +14,7 @@ import Foundation
 
 protocol AuthServiceProtocol {
     func registerDevice(boothId: String, buildNumber: String) async throws
+    func login(email: String, password: String) async throws -> HaispaceUser
     func validateToken(_ token: String) async throws -> HaispaceUser
     func logout(token: String) async throws
 }
@@ -69,13 +70,13 @@ final class LiveAuthService: AuthServiceProtocol {
         return .mockOperator
     }
 
+    func login(email: String, password: String) async throws -> HaispaceUser {
+        return .mockOperator
+    }
+
     func logout(token: String) async throws {
         // Fire and forget — tidak kritis jika gagal
-        guard let url = URL(string: "\(baseURL)/auth/logout") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        _ = try? await session.data(for: request)
+        // No-op for now. In Phase 3, call HSPCloudClient to invalidate token.
     }
 }
 
@@ -98,7 +99,15 @@ final class MockAuthService: AuthServiceProtocol {
         }
 
         // Gagal login
-        throw HaispaceError.authenticationError(reason: "Invalid Access Code")
+        throw HaispaceError.authTokenInvalid
+    }
+
+    func login(email: String, password: String) async throws -> HaispaceUser {
+        try? await Task.sleep(for: simulatedDelay)
+        if email == "admin@haispace.id" {
+            return .mockAdmin
+        }
+        return .mockOperator
     }
 
     func validateToken(_ token: String) async throws -> HaispaceUser {
