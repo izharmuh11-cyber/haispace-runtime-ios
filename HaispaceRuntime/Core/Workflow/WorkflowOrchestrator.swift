@@ -84,9 +84,6 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             Task { @MainActor in
                 RuntimeTimelineLogger.shared.logEvent("SESSION CREATED", payload: newSession.rawValue)
             }
-            
-            // Inisialisasi Aggregate Root
-            self.activeSession = HaispaceSession(id: newSession, metadata: SessionMetadata(eventCode: "EVT-TEST", boothId: "B-001"))
 
             // Invariant 19: AuditTrail dibuat SEBELUM stage berubah
             SessionAuditTrail.create(sessionId: newSession.rawValue)
