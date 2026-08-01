@@ -3,14 +3,32 @@
 
 Kebijakan ini mengatur penerbitan *Runtime Certificate*.
 
-## Syarat Penerbitan Sertifikat
-1. **Green Build:** *Source code* harus lulus CI tanpa *error* atau *warning* kritikal.
-2. **100% Core Pass:** Seluruh kriteria pada bagian BOOT dan SESSION di `RUNTIME_ACCEPTANCE_PROTOCOL` harus hijau (`PASS`).
-3. **Recovery Resilience:** Minimal 80% dari skenario Recovery harus `PASS`.
-4. **Observability Confirmed:** Seluruh aliran data telemetri harus tervalidasi `PASS`.
-5. **No Critical Leaks:** Bagian PERFORMANCE tidak boleh memiliki indikasi kebocoran memori (memory leak) atau *actor deadlock*.
+## Syarat Penerbitan Sertifikat (Resolution M-009B-01)
+**Sebuah Runtime Certificate tidak boleh diterbitkan hanya karena semua checklist dicentang.** Certificate hanya sah apabila dilampirkan bersama sebuah **Evidence Package**.
 
-## Pencabutan (Revocation)
+Minimal *evidence* yang wajib ada:
+1. `Qualification Checklist` (M-009B)
+2. `Timeline Log` (Ekspor `RuntimeTimelineLogger`)
+3. `Health Snapshot` (Output `HealthAggregator`)
+4. `Session Audit Trail`
+5. `Scenario Results` (Bukti eksekusi tiap skenario dari `ScenarioEngine`)
+6. `Runtime Readiness Score`
+
+### Setiap Scenario Menghasilkan Bukti (Resolution M-009B-02)
+Setiap eksekusi skenario kegagalan wajib menghasilkan artefak:
+* Timeline Events (kapan kegagalan terjadi)
+* Health Transition (penurunan skor kesehatan)
+* Workflow Transition (apakah UI masuk ke layar *error*)
+* Recovery Duration (waktu yang dibutuhkan hingga pulih)
+
+### Runtime Readiness Measurement (Resolution M-009B-03)
+Readiness Score tidak boleh menjadi angka statis tunggal. Skor harus dipilah berdasarkan domain untuk memperlihatkan kelemahan sistem secara presisi:
+* Boot (Contoh: 100%)
+* Workflow (Contoh: 100%)
+* Hardware (Contoh: 95%)
+* Observability (Contoh: 100%)
+* Recovery (Contoh: 98%)
+* **Overall Score (Rata-rata tertimbang)**
 Sertifikat dianggap **tidak berlaku (revoked)** jika:
 1. Terjadi perubahan pada *Platform Constitution* yang tidak divalidasi ulang.
 2. Ditemukan *bug* fatal (Severity: P0) pada *production* yang menyebabkan *downtime* > 1 jam.
