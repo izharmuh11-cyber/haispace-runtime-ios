@@ -288,8 +288,12 @@ struct ActiveSessionView: View {
                 // Bridge CameraCapability -> Legacy SessionStore
                 //
                 // Remove after M-013 when SessionStore is fully retired.
+                await RuntimeTimelineLogger.shared.logEvent("LEGACY BRIDGE INJECTED")
+                
+                var currentCount = 0
+                var maxCount = 0
+                
                 await MainActor.run {
-                    await RuntimeTimelineLogger.shared.logEvent("LEGACY BRIDGE INJECTED")
                     if let path = CapturedPhotoStore.shared.latestCapturedPhotoPath,
                        let data = try? Data(contentsOf: URL(fileURLWithPath: path)) {
                         
@@ -301,20 +305,23 @@ struct ActiveSessionView: View {
                         // Inject ke Legacy SessionStore agar muncul di filmstrip
                         appState.currentSession?.photos.receiveThumbnail(thumbnail)
                         appState.currentSession?.photos.upgradeToFullQuality(photoId: photoId, fullData: data)
-                        await RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
                         
                         // Cek apakah kuota foto sudah terpenuhi
                         if let s = appState.currentSession {
-                            let count = s.photos.capturedCount
-                            let max = s.package_.maxPhotoCount
-                            await RuntimeTimelineLogger.shared.logEvent("PHOTO COUNT \(count)/\(max)")
+                            currentCount = s.photos.capturedCount
+                            maxCount = s.package_.maxPhotoCount
                             
-                            if count >= max {
+                            if currentCount >= maxCount {
                                 // Pindah ke layar Preview / Pemilihan Foto
                                 s.proceedToPhotoSelection()
                             }
                         }
                     }
+                }
+                
+                await RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
+                if maxCount > 0 {
+                    await RuntimeTimelineLogger.shared.logEvent("PHOTO COUNT \(currentCount)/\(maxCount)")
                 }
             } catch {
                 // Non-fatal: log and continue so session doesn't crash
