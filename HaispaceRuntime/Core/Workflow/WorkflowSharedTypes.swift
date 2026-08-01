@@ -33,6 +33,8 @@ public enum WorkflowIntent: Sendable {
     case confirmPaymentSuccess
     case finishSession
     case cancelSessionByOperator
+    case testCameraCapture
+    case testPrinter
 }
 
 /// Snapshot Kesehatan Workflow Engine

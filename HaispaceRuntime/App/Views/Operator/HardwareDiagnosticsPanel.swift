@@ -59,7 +59,7 @@ struct HardwareDiagnosticsPanel: View {
                     }
                     .disabled(isPrinterTesting || appState.runtime.capabilityManager.state.printer != .available)
                     
-                    Button("Trigger P2P Advertising") {
+                    Button("Trigger P2P Advertising (Experimental)") {
                         Task {
                             try? await P2PCapabilityService.shared.prepare(configuration: .init())
                         }
@@ -122,7 +122,7 @@ struct HardwareDiagnosticsPanel: View {
     private func testPrinter() {
         isPrinterTesting = true
         Task {
-            try? await PrinterCapabilityService.shared.sendTestPage()
+            try? await appState.runtime.orchestrator.handleIntent(.testPrinter)
             await MainActor.run { isPrinterTesting = false }
         }
     }
@@ -130,16 +130,7 @@ struct HardwareDiagnosticsPanel: View {
     private func testCamera() {
         isCameraTesting = true
         Task {
-            let correlationId = CorrelationID()
-            try? await CameraCapabilityService.shared.startSession(sessionId: SessionID())
-            // Brief wait for exposure
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            try? await CameraCapabilityService.shared.requestCapture(correlationId: correlationId)
-            
-            // In a real app we'd get the path back from the orchestration
-            // Here we just test the capability directly for diagnostics
-            
-            await CameraCapabilityService.shared.stopSession()
+            try? await appState.runtime.orchestrator.handleIntent(.testCameraCapture)
             await MainActor.run { isCameraTesting = false }
         }
     }

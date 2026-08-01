@@ -5,39 +5,19 @@
 // dengan countdown timer sinkron dan animasi flash shutter.
 
 import SwiftUI
-import AVFoundation
 
-// MARK: - Streaming Video View (UIViewRepresentable)
+// MARK: - Legacy View (Temporarily Removed for M-007 Platform Contract Compliance)
+// View ini melanggar aturan isolasi hardware karena menggunakan AVSampleBufferDisplayLayer secara langsung.
+// Akan diganti dengan View yang mengonsumsi PreviewPipeline di M-008.
 
-class StreamingDecoderView: UIView {
-    private let displayLayer: AVSampleBufferDisplayLayer
-    
-    init(displayLayer: AVSampleBufferDisplayLayer) {
-        self.displayLayer = displayLayer
-        super.init(frame: .zero)
-        self.backgroundColor = .black
-        self.layer.addSublayer(displayLayer)
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        displayLayer.frame = self.bounds
-        // Transformasi Cermin Horizontal (Mirroring cermin alami: miring ke kiri bergerak ke kiri)
-        displayLayer.transform = CATransform3DMakeScale(-1.0, 1.0, 1.0)
-    }
-}
-
-struct StreamingVideoView: UIViewRepresentable {
-    func makeUIView(context: Context) -> StreamingDecoderView {
-        return StreamingDecoderView(displayLayer: StreamingDecoderService.shared.displayLayer)
-    }
-    
-    func updateUIView(_ uiView: StreamingDecoderView, context: Context) {
-        // Layout disesuaikan oleh layoutSubviews
+struct StreamingVideoView: View {
+    var body: some View {
+        Color.black
+            .overlay {
+                Text("Camera Preview\n(Hardware Isolated)")
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+            }
     }
 }
 

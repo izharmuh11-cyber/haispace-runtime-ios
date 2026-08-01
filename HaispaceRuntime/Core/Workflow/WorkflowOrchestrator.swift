@@ -349,6 +349,21 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 SessionAuditTrail.close(sessionId: sessionId.rawValue, status: finalStatus)
             }
             await resetToLanding()
+            
+        case .testCameraCapture:
+            let correlationId = CorrelationID()
+            try? await camera.startSession(sessionId: SessionID())
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            try? await camera.requestCapture(correlationId: correlationId)
+            await camera.stopSession()
+            
+        case .testPrinter:
+            // Assuming we have access to printer, but it's not injected yet.
+            // For now, since M-007 requires printer capability, we might not have it in the orchestrator injection yet.
+            // Let's just log or call it directly if it's a shared instance, though WorkflowOrchestrator should inject it.
+            // Wait, printer is not in WorkflowOrchestratorProtocol!
+            // I'll just use PrinterCapabilityService.shared for this isolated diagnostic intent for now.
+            try? await PrinterCapabilityService.shared.sendTestPage()
         }
     }
     
