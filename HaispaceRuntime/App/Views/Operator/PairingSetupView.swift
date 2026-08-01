@@ -1,5 +1,5 @@
 // PairingSetupView.swift
-// HaispaceBooths — App/Views/Operator
+// HaispaceRuntime — App/Views/Operator
 //
 // Layar Setup P2P Pairing untuk memindai QR Code dari iPhone.
 // Menampilkan QR Code dinamis dan countdown timer regenerasi.

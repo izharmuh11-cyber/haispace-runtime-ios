@@ -1,5 +1,5 @@
 // HealthAggregator.swift
-// HaispaceBooths — Core/Observability
+// HaispaceRuntime — Core/Observability
 //
 // Mengumpulkan health snapshots — hanya mengumpulkan, tidak menganalisis.
 //

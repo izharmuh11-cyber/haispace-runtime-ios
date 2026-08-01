@@ -1,5 +1,5 @@
 // HaispaceError.swift
-// HaispaceBooths — Core/Error
+// HaispaceRuntime — Core/Error
 //
 // Satu-satunya enum error yang boleh di-throw di seluruh codebase.
 // Untuk error dari library third-party/sistem, SELALU wrap ke sini.

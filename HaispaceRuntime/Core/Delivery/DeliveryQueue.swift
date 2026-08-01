@@ -1,5 +1,5 @@
 // DeliveryQueue.swift
-// HaispaceBooths — Core/Delivery
+// HaispaceRuntime — Core/Delivery
 //
 // Offline-first persistent queue untuk pengiriman softcopy (WhatsApp/link).
 //

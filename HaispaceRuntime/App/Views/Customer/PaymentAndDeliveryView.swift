@@ -1,5 +1,5 @@
 // PaymentAndDeliveryView.swift
-// HaispaceBooths — UI/Views (Scene 5: The Celebration & Gift)
+// HaispaceRuntime — UI/Views (Scene 5: The Celebration & Gift)
 //
 // Payment & Photo Delivery View Haispace Kiosk Photobooth.
 // REVISION 1 — Based on Apple Design Review #009 (8.8/10 -> Target Approved 9.6+).

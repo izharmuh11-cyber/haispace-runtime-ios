@@ -1,5 +1,5 @@
 // CameraSupervisor.swift
-// HaispaceBooths — Core/Supervisors
+// HaispaceRuntime — Core/Supervisors
 //
 // State machine supervisor untuk kamera (fisik atau remote via P2P).
 //

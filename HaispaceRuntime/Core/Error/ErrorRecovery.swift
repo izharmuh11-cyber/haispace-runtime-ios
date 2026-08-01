@@ -1,5 +1,5 @@
 // ErrorRecovery.swift
-// HaispaceBooths — Core/Error
+// HaispaceRuntime — Core/Error
 //
 // Strategy recovery untuk setiap jenis error.
 // Jangan handle semua error dengan alert — setiap error punya strategy berbeda.

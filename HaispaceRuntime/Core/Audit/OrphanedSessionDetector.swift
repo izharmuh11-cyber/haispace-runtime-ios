@@ -1,5 +1,5 @@
 // OrphanedSessionDetector.swift
-// HaispaceBooths — Core/Audit
+// HaispaceRuntime — Core/Audit
 //
 // Deteksi sesi yang tidak selesai (orphaned) dan menghasilkan rekomendasi recovery.
 //

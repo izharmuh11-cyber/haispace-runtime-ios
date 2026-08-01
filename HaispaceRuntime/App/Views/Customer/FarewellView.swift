@@ -1,5 +1,5 @@
 // FarewellView.swift
-// HaispaceBooths — UI/Views (Scene 6: The Goodbye)
+// HaispaceRuntime — UI/Views (Scene 6: The Goodbye)
 //
 // Warm Farewell & Seamless Attract Reset View Haispace Kiosk Photobooth.
 // Scene Intent: "Leave people wanting to return".

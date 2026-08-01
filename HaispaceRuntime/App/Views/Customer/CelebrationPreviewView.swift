@@ -1,5 +1,5 @@
 // CelebrationPreviewView.swift
-// HaispaceBooths — UI/Views (Scene 4: The Reveal)
+// HaispaceRuntime — UI/Views (Scene 4: The Reveal)
 //
 // The Big Reveal & Celebration View Haispace Kiosk Photobooth.
 // REVISION 1 — Based on Apple Design Review #007 (8.8/10 -> Target Approved 9.8+).

@@ -1,5 +1,5 @@
 // ErrorPresenter.swift
-// HaispaceBooths — Core/Error
+// HaispaceRuntime — Core/Error
 //
 // Presenter yang menerjemahkan ErrorRecoveryStrategy ke UI actions.
 // Semua presentasi UI dari error harus melalui sini.

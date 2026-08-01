@@ -1,5 +1,5 @@
 // EditingView.swift
-// HaispaceBooths — App/Views/Customer/Editing
+// HaispaceRuntime — App/Views/Customer/Editing
 //
 // Layar Editing (Quick & Intuitive).
 // Refactor: Menggunakan DesignSystem (Tokens, Components, Motion)

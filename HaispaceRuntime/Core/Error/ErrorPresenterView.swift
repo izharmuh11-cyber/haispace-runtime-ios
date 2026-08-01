@@ -1,5 +1,5 @@
 // ErrorPresenterView.swift
-// HaispaceBooths — Core/Error
+// HaispaceRuntime — Core/Error
 //
 // Komponen SwiftUI untuk menampilkan error ke tamu & operator.
 // Tiga varian tersedia sesuai konteks:

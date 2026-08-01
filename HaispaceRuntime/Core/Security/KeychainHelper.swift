@@ -1,5 +1,5 @@
 // KeychainHelper.swift
-// HaispaceBooths — Core/Security
+// HaispaceRuntime — Core/Security
 //
 // Penyimpanan aman JWT token di iOS Keychain menggunakan Secure Enclave.
 // Token TIDAK BOLEH disimpan di UserDefaults — sangat tidak aman.

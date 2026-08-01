@@ -1,5 +1,5 @@
 // AuthStore.swift
-// HaispaceBooths — Core/State
+// HaispaceRuntime — Core/State
 //
 // Store untuk status autentikasi operator/admin.
 // Mengelola login, logout, dan status JWT token.

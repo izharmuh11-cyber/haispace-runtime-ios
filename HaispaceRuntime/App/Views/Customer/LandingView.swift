@@ -1,5 +1,5 @@
 // LandingView.swift
-// HaispaceBooths — App/Views/Customer/Landing
+// HaispaceRuntime — App/Views/Customer/Landing
 //
 // Screen pertama yang dilihat customer.
 // Refactor: Menggunakan DesignSystem (Tokens, Components, Unified Motion)

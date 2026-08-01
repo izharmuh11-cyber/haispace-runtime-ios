@@ -1,5 +1,5 @@
 // P2PEvents.swift
-// HaispaceBooths — Core/Capabilities/P2P
+// HaispaceRuntime — Core/Capabilities/P2P
 //
 // Payload Event Granular Domain P2P, Health, dan Metrics.
 

@@ -1,5 +1,5 @@
 // PerformanceBudget.swift
-// HaispaceBooths — Core/Performance
+// HaispaceRuntime — Core/Performance
 //
 // Performance budget constants & monitoring untuk kiosk premium.
 //

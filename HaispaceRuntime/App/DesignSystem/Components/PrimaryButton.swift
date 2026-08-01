@@ -1,5 +1,5 @@
 // PrimaryButton.swift
-// HaispaceBooths — App/DesignSystem/Components
+// HaispaceRuntime — App/DesignSystem/Components
 //
 // Tombol Utama Reusable bergaya Apple (Clean White, Dark Text, Press Scale & Shadow).
 // Ref: Lead Apple UI/UX Review

@@ -1,5 +1,5 @@
 // CaptureCollection.swift
-// HaispaceBooths — Core/Domain/Session
+// HaispaceRuntime — Core/Domain/Session
 //
 // Domain model untuk koleksi Capture dalam sebuah Session.
 //

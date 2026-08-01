@@ -1,5 +1,5 @@
 // CaptureView.swift
-// HaispaceBooths — App/Views/Customer/Capture
+// HaispaceRuntime — App/Views/Customer/Capture
 //
 // Layar pengambilan foto (Cinematic & Automated).
 // Refactor: Menggunakan DesignSystem (Tokens, Components, Motion)

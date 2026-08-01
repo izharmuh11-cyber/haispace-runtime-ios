@@ -1,5 +1,5 @@
 // CreateSessionView.swift
-// HaispaceBooths — UI/Views (Scene 2: The Choice)
+// HaispaceRuntime — UI/Views (Scene 2: The Choice)
 //
 // Create Session & Theme Selection View Haispace Kiosk Photobooth.
 // REVISION 1 — Based on Apple Design Review #003 (8.4/10 -> Target Approved).

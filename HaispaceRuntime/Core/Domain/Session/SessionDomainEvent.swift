@@ -1,5 +1,5 @@
 // SessionDomainEvent.swift
-// HaispaceBooths — Core/Domain/Session
+// HaispaceRuntime — Core/Domain/Session
 //
 // Domain Events yang dihasilkan oleh HaispaceSession Aggregate.
 //

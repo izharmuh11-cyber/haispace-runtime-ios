@@ -1,5 +1,5 @@
 // EditingCapability.swift
-// HaispaceBooths — Core/Capabilities/Editing
+// HaispaceRuntime — Core/Capabilities/Editing
 //
 // Sprint 2 Implementation — Business Capability Orchestrator Domain Editing.
 // Mengadopsi Pola Golden Reference Doc #50 (85-90% Structural Reuse dari CameraCapability).

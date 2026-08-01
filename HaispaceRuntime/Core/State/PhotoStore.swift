@@ -1,5 +1,5 @@
 // PhotoStore.swift
-// HaispaceBooths — Core/State
+// HaispaceRuntime — Core/State
 //
 // Store untuk semua foto dalam sesi yang sedang aktif.
 // Mengelola dual-channel receipt (thumbnail cepat + full quality background).

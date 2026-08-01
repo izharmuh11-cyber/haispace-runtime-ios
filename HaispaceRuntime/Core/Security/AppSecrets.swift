@@ -1,16 +1,16 @@
 // AppSecretConfig.swift
-// HaispaceBooths / HaispaceCamera — Core/Security
+// HaispaceRuntime / HaispaceCamera — Core/Security
 //
 // Satu-satunya titik akses untuk semua credentials runtime.
 // Credentials dibaca dari xcconfig → Info.plist → runtime.
 //
 // CARA KERJA:
-// 1. Developer membuat HaispaceBooths.xcconfig dari template di Secrets/
+// 1. Developer membuat HaispaceRuntime.xcconfig dari template di Secrets/
 // 2. Xcode meng-inject xcconfig values ke Info.plist saat build
 // 3. Runtime membaca dari Bundle.main.infoDictionary — TIDAK ada hardcode
 //
 // Ref: docs/design/ADR-001_workflow_ownership.md (Security section)
-// Ref: Secrets/HaispaceBooths.xcconfig.template
+// Ref: Secrets/HaispaceRuntime.xcconfig.template
 
 import Foundation
 
@@ -69,7 +69,7 @@ enum AppSecretConfig {
               !value.isEmpty,
               !value.hasPrefix("GANTI_DENGAN"),
               !value.hasPrefix("$(") else {
-            print("⚠️ AppSecretConfig: Credential '\(key)' tidak ditemukan atau belum diisi. Pastikan HaispaceBooths.xcconfig sudah di-setup.")
+            print("⚠️ AppSecretConfig: Credential '\(key)' tidak ditemukan atau belum diisi. Pastikan HaispaceRuntime.xcconfig sudah di-setup.")
             return ""
         }
         return value

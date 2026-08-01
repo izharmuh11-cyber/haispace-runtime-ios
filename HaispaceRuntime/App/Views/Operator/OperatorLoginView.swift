@@ -1,5 +1,5 @@
 // OperatorLoginView.swift
-// HaispaceBooths — App/Views/Operator
+// HaispaceRuntime — App/Views/Operator
 //
 // Layar Login Operator bertema Light Glass & Clean Apple UI.
 // Dilengkapi Logo Resmi Haispace (Font Comfortaa), In-App Keyboard persistent, dan autentikasi instan.

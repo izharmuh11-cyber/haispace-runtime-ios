@@ -1,5 +1,5 @@
 // PaymentCapability.swift
-// HaispaceBooths — Core/Capabilities/Payment
+// HaispaceRuntime — Core/Capabilities/Payment
 //
 // Sprint 4 Implementation — Business Capability Orchestrator Domain Pembayaran.
 // Mengadopsi Pola Golden Reference Doc #50 (91% Structural Reuse).

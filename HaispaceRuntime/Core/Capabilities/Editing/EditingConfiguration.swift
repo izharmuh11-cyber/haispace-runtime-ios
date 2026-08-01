@@ -1,5 +1,5 @@
 // EditingConfiguration.swift
-// HaispaceBooths — Core/Capabilities/Editing
+// HaispaceRuntime — Core/Capabilities/Editing
 //
 // Model Konfigurasi Murni Editing Capability (Deterministik).
 

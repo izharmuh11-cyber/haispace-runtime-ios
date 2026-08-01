@@ -1,5 +1,5 @@
 // RuntimeContainer.swift
-// HaispaceBooths — Core/Runtime
+// HaispaceRuntime — Core/Runtime
 //
 // COMPOSITION ROOT untuk seluruh Platform Runtime Haispace.
 //

@@ -1,5 +1,5 @@
 // LocalSessionRepository.swift
-// HaispaceBooths — Core/Infrastructure/Repository
+// HaispaceRuntime — Core/Infrastructure/Repository
 //
 // Implementasi pertama SessionRepositoryProtocol.
 // Menyimpan SessionSnapshot sebagai JSON ke Documents directory.

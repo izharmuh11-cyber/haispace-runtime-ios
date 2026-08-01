@@ -1,5 +1,5 @@
 // SessionSnapshot.swift
-// HaispaceBooths — Core/Session
+// HaispaceRuntime — Core/Session
 //
 // Snapshot atomik dari seluruh state sesi yang aktif.
 //

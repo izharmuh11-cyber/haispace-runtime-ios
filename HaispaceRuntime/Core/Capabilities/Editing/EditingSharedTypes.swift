@@ -1,5 +1,5 @@
 // EditingSharedTypes.swift
-// HaispaceBooths — Core/Capabilities/Editing
+// HaispaceRuntime — Core/Capabilities/Editing
 //
 // Value Objects & Data Structs khusus untuk Editing Domain.
 // Mendukung operasi deterministik f(Input, Config) -> Output.

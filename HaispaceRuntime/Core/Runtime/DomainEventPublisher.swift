@@ -1,5 +1,5 @@
 // DomainEventPublisher.swift
-// HaispaceBooths — Core/Runtime
+// HaispaceRuntime — Core/Runtime
 //
 // Platform-level Event Bus untuk seluruh Domain Events dari Session Aggregate.
 //

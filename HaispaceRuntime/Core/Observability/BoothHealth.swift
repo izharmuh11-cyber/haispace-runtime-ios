@@ -1,5 +1,5 @@
 // BoothHealth.swift
-// HaispaceBooths — Core/Observability
+// HaispaceRuntime — Core/Observability
 //
 // Mengimplementasikan "Booth Healthy Contract v1":
 // Booth dianggap sehat jika dapat menyelesaikan sesi tamu yang sedang berjalan

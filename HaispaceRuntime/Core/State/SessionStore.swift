@@ -1,5 +1,5 @@
 // SessionStore.swift
-// HaispaceBooths — Core/State
+// HaispaceRuntime — Core/State
 //
 // Store terpenting — mengelola sesi foto yang sedang aktif.
 // Satu-satunya sumber kebenaran untuk semua data sesi aktif.

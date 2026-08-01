@@ -1,5 +1,5 @@
 // NetworkUtility.swift
-// HaispaceBooths — Core/Network
+// HaispaceRuntime — Core/Network
 //
 // Utilitas untuk mendapatkan konfigurasi jaringan lokal (IP Address WiFi).
 

@@ -1,5 +1,5 @@
 // Tokens.swift
-// HaispaceBooths — App/DesignSystem
+// HaispaceRuntime — App/DesignSystem
 //
 // Single Source of Truth untuk Token Visual, Tipografi, Spacing, dan Animasi.
 // Ref: Lead Apple UI/UX Review (Target 9.9 - 10 / Apple Store Demo Grade)

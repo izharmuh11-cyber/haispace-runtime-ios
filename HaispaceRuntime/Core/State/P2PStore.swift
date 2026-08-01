@@ -1,5 +1,5 @@
 // P2PStore.swift
-// HaispaceBooths — Core/State
+// HaispaceRuntime — Core/State
 //
 // Store untuk status koneksi P2P antara iPad dan iPhone.
 // Mengelola connection state, latency tracking, dan signal quality.

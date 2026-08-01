@@ -1,5 +1,5 @@
 // PINEntryView.swift
-// HaispaceBooths — App/Views/Operator
+// HaispaceRuntime — App/Views/Operator
 //
 // Layar/popup transparan untuk input PIN Operator.
 // Mencegah tamu masuk ke Mission Control.

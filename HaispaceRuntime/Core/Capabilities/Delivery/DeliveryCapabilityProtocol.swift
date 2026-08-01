@@ -1,5 +1,5 @@
 // DeliveryCapabilityProtocol.swift
-// HaispaceBooths — Core/Capabilities/Delivery
+// HaispaceRuntime — Core/Capabilities/Delivery
 //
 // Kontrak Kemampuan Bisnis Domain Distribusi Foto Haispace Platform.
 // BEBAS dari istilah AirDrop, Bonjour, HTTP Server, atau SDK spesifik.

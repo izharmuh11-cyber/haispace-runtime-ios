@@ -1,5 +1,5 @@
 // CapabilityRegistry.swift
-// HaispaceBooths — Core/Runtime
+// HaispaceRuntime — Core/Runtime
 //
 // Kontrak Capability Registry untuk Platform Haispace.
 //

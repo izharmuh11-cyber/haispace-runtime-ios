@@ -1,5 +1,5 @@
 // NoOpCapabilities.swift
-// HaispaceBooths — Core/Capabilities
+// HaispaceRuntime — Core/Capabilities
 //
 // Implementasi NoOp (safe no-operation) untuk semua capability protocols.
 // Digunakan sebagai safe default di WorkflowOrchestrator sebelum real capabilities di-wire.

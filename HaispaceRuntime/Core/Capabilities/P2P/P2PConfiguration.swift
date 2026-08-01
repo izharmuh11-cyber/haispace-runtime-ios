@@ -1,5 +1,5 @@
 // P2PConfiguration.swift
-// HaispaceBooths — Core/Capabilities/P2P
+// HaispaceRuntime — Core/Capabilities/P2P
 //
 // Struct Konfigurasi Murni Domain P2P Communication.
 

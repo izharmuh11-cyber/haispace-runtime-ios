@@ -1,5 +1,5 @@
 // WorkflowOrchestratorProtocol.swift
-// HaispaceBooths — Core/Workflow
+// HaispaceRuntime — Core/Workflow
 //
 // Protocol Kontrak Business State Machine Workflow Orchestrator.
 

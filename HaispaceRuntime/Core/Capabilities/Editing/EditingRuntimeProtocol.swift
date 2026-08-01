@@ -1,5 +1,5 @@
 // EditingRuntimeProtocol.swift
-// HaispaceBooths — Core/Capabilities/Editing
+// HaispaceRuntime — Core/Capabilities/Editing
 //
 // Protocol Adapter antara EditingCapability (Orchestrator) 
 // dan Pipeline Rendering Native (CoreImage, Metal, FrameCompositorService).

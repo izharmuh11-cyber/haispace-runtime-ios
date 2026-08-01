@@ -1,5 +1,5 @@
 // GlassHint.swift
-// HaispaceBooths — App/DesignSystem/Components
+// HaispaceRuntime — App/DesignSystem/Components
 //
 // Petunjuk visual berbasis Glassmorphism (.ultraThinMaterial) gaya Apple.
 // Ref: Lead Apple UI/UX Review

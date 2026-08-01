@@ -1,5 +1,5 @@
 // PaymentStore.swift
-// HaispaceBooths — Core/State
+// HaispaceRuntime — Core/State
 //
 // Store untuk status pembayaran sesi aktif.
 // Mendukung QRIS (offline EMVCo generator) dan Cash.

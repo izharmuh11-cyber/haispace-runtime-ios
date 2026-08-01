@@ -1,5 +1,5 @@
 // Subscribers.swift
-// HaispaceBooths — Core/Runtime
+// HaispaceRuntime — Core/Runtime
 //
 // Built-in Subscriber implementations untuk DomainEventPublisher.
 //

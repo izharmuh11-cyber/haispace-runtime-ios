@@ -1,5 +1,5 @@
 // EditingEvents.swift
-// HaispaceBooths — Core/Capabilities/Editing
+// HaispaceRuntime — Core/Capabilities/Editing
 //
 // Payload Event Granular Domain Editing, Health, dan Metrics.
 

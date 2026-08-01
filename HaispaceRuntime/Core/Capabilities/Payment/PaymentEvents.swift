@@ -1,5 +1,5 @@
 // PaymentEvents.swift
-// HaispaceBooths — Core/Capabilities/Payment
+// HaispaceRuntime — Core/Capabilities/Payment
 //
 // Payload Event Domain Pembayaran, Health, dan Metrics.
 

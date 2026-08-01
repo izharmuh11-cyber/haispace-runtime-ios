@@ -1,5 +1,5 @@
 // SessionSnapshot.swift
-// HaispaceBooths — Core/Domain/Session
+// HaispaceRuntime — Core/Domain/Session
 //
 // Kontrak penyimpanan yang stabil untuk HaispaceSession.
 //

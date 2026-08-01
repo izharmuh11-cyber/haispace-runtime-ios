@@ -1,5 +1,5 @@
 // DiagnosisEngine.swift
-// HaispaceBooths — Core/Observability
+// HaispaceRuntime — Core/Observability
 //
 // Pure engine: PlatformHealthSnapshot → DiagnosisReport
 //

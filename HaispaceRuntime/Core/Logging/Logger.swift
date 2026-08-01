@@ -1,5 +1,5 @@
 // Logger.swift
-// HaispaceBooths — Core/Logging
+// HaispaceRuntime — Core/Logging
 //
 // Satu-satunya cara logging yang diizinkan di seluruh codebase.
 // Jangan gunakan print() untuk error — tidak masuk ke crash report.

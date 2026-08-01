@@ -1,5 +1,5 @@
 // RootView.swift
-// HaispaceBooths — App
+// HaispaceRuntime — App
 //
 // Root routing view — menentukan layar apa yang ditampilkan berdasarkan app state.
 // Tidak ada business logic di sini — hanya routing berdasarkan state.

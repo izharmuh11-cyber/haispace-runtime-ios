@@ -1,5 +1,5 @@
 // PaymentConfiguration.swift
-// HaispaceBooths — Core/Capabilities/Payment
+// HaispaceRuntime — Core/Capabilities/Payment
 //
 // Model Konfigurasi Murni Domain Pembayaran (Business Level).
 

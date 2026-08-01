@@ -1,5 +1,5 @@
 // ExperienceIntelligenceEngine.swift
-// HaispaceBooths — Core/Capabilities/Intelligence
+// HaispaceRuntime — Core/Capabilities/Intelligence
 //
 // Passive Experience Telemetry & Friction Analytics Engine (Doc #57 & Doc #59 Compliant).
 // - STRICT BOUNDARY: 100% Passive Observer ("Instrument Panel", NOT a "Pilot").

@@ -1,5 +1,5 @@
 // PaymentSharedTypes.swift
-// HaispaceBooths — Core/Capabilities/Payment
+// HaispaceRuntime — Core/Capabilities/Payment
 //
 // Value Objects & Structs Domain Pembayaran Haispace Platform.
 

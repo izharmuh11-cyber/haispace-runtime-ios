@@ -1,5 +1,5 @@
 // ErrorHandler.swift
-// HaispaceBooths — Core/Error
+// HaispaceRuntime — Core/Error
 //
 // Satu-satunya titik masuk untuk semua error handling.
 // Semua error HARUS melalui ErrorHandler.shared.handle() — jangan handle sendiri.

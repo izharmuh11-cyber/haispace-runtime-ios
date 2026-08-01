@@ -1,5 +1,5 @@
 // PrinterSupervisor.swift
-// HaispaceBooths — Core/Supervisors
+// HaispaceRuntime — Core/Supervisors
 //
 // State machine supervisor untuk printer fisik (Epson L8050 / generic dye-sub).
 //

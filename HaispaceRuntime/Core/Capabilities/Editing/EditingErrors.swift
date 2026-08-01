@@ -1,5 +1,5 @@
 // EditingErrors.swift
-// HaispaceBooths — Core/Capabilities/Editing
+// HaispaceRuntime — Core/Capabilities/Editing
 //
 // Enum Error Independen Domain Editing Capability.
 

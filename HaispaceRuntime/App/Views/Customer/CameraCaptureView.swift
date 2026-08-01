@@ -1,5 +1,5 @@
 // CameraCaptureView.swift
-// HaispaceBooths — UI/Views (Scene 3: The Moment)
+// HaispaceRuntime — UI/Views (Scene 3: The Moment)
 //
 // Camera Live Capture & Automatic Pose Countdown View Haispace Kiosk Photobooth.
 // REVISION 1 — Based on Apple Design Review #005 (8.8/10 -> Target Approved).

@@ -1,5 +1,5 @@
 // MissionControlView.swift
-// HaispaceBooths — App/Views/Operator
+// HaispaceRuntime — App/Views/Operator
 //
 // Layar utama operator. Menampilkan status platform secara real-time.
 //

@@ -1,5 +1,5 @@
 // RuntimeClock.swift
-// HaispaceBooths — Core/Runtime
+// HaispaceRuntime — Core/Runtime
 //
 // Abstraksi waktu untuk seluruh Platform Runtime Haispace.
 //

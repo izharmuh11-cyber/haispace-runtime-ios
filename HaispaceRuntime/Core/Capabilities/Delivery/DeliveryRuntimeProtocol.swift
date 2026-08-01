@@ -1,5 +1,5 @@
 // DeliveryRuntimeProtocol.swift
-// HaispaceBooths — Core/Capabilities/Delivery
+// HaispaceRuntime — Core/Capabilities/Delivery
 //
 // Protocol Adapter antara DeliveryCapability (Orchestrator) 
 // dan Hardware/Transport Layer (AirDrop / Bonjour Local Server / Cloud R2).

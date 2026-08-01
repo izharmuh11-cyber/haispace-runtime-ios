@@ -1,5 +1,5 @@
 // PaymentCapabilityProtocol.swift
-// HaispaceBooths — Core/Capabilities/Payment
+// HaispaceRuntime — Core/Capabilities/Payment
 //
 // Kontrak Kemampuan Bisnis Domain Pembayaran Haispace Platform.
 // BEBAS dari istilah EMVCo, CRC16, HTTP, atau Gateway spesifik.

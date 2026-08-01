@@ -1,5 +1,5 @@
 // PaymentErrors.swift
-// HaispaceBooths — Core/Capabilities/Payment
+// HaispaceRuntime — Core/Capabilities/Payment
 //
 // Enum Error Independen Domain Payment Capability.
 

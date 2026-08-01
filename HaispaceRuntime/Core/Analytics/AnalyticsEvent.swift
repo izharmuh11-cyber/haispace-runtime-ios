@@ -1,5 +1,5 @@
 // AnalyticsEvent.swift
-// HaispaceBooths — Core/Analytics
+// HaispaceRuntime — Core/Analytics
 //
 // Business analytics events untuk mengukur KPI operasional kiosk.
 //

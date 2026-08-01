@@ -1,5 +1,5 @@
 // HaispaceOfficialLogoView.swift
-// HaispaceBooths — App/Views/Components
+// HaispaceRuntime — App/Views/Components
 
 import SwiftUI
 

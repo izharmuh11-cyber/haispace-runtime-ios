@@ -1,5 +1,5 @@
 // IncidentEngine.swift
-// HaispaceBooths — Core/Observability
+// HaispaceRuntime — Core/Observability
 //
 // Mengevaluasi kombinasi diagnosis untuk menentukan apakah kondisi
 // menjadi sebuah INSIDEN yang memerlukan perhatian khusus operator.

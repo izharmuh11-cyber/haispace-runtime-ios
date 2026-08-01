@@ -1,5 +1,5 @@
 // AttractView.swift
-// HaispaceBooths — UI/Views (Scene 1: The Invitation)
+// HaispaceRuntime — UI/Views (Scene 1: The Invitation)
 //
 // Standby / Attract Mode View Haispace Kiosk Photobooth.
 // FINAL POLISHED VERSION — CONDITIONALLY APPROVED BY APPLE DESIGN REVIEW (9.1/10).

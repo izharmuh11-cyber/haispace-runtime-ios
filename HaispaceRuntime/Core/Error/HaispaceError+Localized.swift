@@ -1,5 +1,5 @@
 // HaispaceError+Localized.swift
-// HaispaceBooths — Core/Error
+// HaispaceRuntime — Core/Error
 //
 // Pesan error dalam Bahasa Indonesia yang menenangkan, jelas, dan actionable.
 // Semua pesan yang ditampilkan ke tamu/operator HARUS melalui sini.

@@ -1,5 +1,5 @@
 // MissionControlViewModel.swift
-// HaispaceBooths — App/ViewModels/Operator
+// HaispaceRuntime — App/ViewModels/Operator
 //
 // Thin ViewModel untuk Mission Control.
 // Kontrak yang sangat terbatas — sesuai peringatan principal engineer

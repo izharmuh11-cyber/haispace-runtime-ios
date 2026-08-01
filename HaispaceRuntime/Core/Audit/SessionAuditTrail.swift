@@ -1,5 +1,5 @@
 // SessionAuditTrail.swift
-// HaispaceBooths — Core/Audit
+// HaispaceRuntime — Core/Audit
 //
 // Persistent append-only event log per-sesi.
 //

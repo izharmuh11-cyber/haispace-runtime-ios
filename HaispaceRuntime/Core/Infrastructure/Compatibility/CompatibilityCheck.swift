@@ -1,5 +1,5 @@
 // CompatibilityCheck.swift
-// HaispaceBooths — Core/Infrastructure/Compatibility
+// HaispaceRuntime — Core/Infrastructure/Compatibility
 //
 // Domain model untuk hasil perbandingan Aggregate vs Legacy Store.
 //

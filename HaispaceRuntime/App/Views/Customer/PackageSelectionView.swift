@@ -1,5 +1,5 @@
 // PackageSelectionView.swift
-// HaispaceBooths — App/Views/Customer/Package
+// HaispaceRuntime — App/Views/Customer/Package
 //
 // Layar Pemilihan Paket (Visual, Minim Teks, High Clarity).
 // Refactor: Menggunakan DesignSystem (Tokens, Components, Motion)

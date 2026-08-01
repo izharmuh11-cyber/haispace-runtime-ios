@@ -1,5 +1,5 @@
 // WorkflowOrchestrator.swift
-// HaispaceBooths — Core/Workflow
+// HaispaceRuntime — Core/Workflow
 //
 // Business State Machine Orchestrator Haispace Kiosk.
 // Menghubungkan Intent dari SwiftUI View Layer ke 5 Business Capabilities.

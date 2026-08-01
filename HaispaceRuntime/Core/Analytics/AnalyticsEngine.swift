@@ -1,5 +1,5 @@
 // AnalyticsEngine.swift
-// HaispaceBooths — Core/Analytics
+// HaispaceRuntime — Core/Analytics
 //
 // Local-first analytics engine untuk kiosk.
 //

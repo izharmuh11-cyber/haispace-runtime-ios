@@ -1,5 +1,5 @@
 // SessionRestoreEngine.swift
-// HaispaceBooths — Core/Recovery
+// HaispaceRuntime — Core/Recovery
 //
 // Menentukan tindakan recovery yang tepat untuk setiap orphaned session.
 //

@@ -1,5 +1,5 @@
 // SessionRepository.swift
-// HaispaceBooths — Core/Domain/Session
+// HaispaceRuntime — Core/Domain/Session
 //
 // Kontrak akses persistence untuk Session Aggregate.
 //

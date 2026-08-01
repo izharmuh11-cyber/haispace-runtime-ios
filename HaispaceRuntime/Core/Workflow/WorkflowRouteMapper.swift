@@ -1,5 +1,5 @@
 // WorkflowRouteMapper.swift
-// HaispaceBooths — Core/Workflow
+// HaispaceRuntime — Core/Workflow
 //
 // Adapter tunggal antara WorkflowStage (domain Orchestrator)
 // dan KioskRoute (domain UI/AppState).

@@ -1,5 +1,5 @@
 // P2PRuntimeProtocol.swift
-// HaispaceBooths — Core/Capabilities/P2P
+// HaispaceRuntime — Core/Capabilities/P2P
 //
 // Protocol Adapter antara P2PCapability (Orchestrator) 
 // dan Hardware Transport Layer (MultipeerConnectivity / Network.framework).

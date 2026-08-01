@@ -1,5 +1,5 @@
 // P2PSharedTypes.swift
-// HaispaceBooths — Core/Capabilities/P2P
+// HaispaceRuntime — Core/Capabilities/P2P
 //
 // Value Objects & Data Structs khusus untuk Domain Komunikasi P2P.
 // Mendukung dual-transport mesh, sliding window, & resume capability.

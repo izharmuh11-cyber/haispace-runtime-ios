@@ -1,5 +1,5 @@
 // LogViewerSheet.swift
-// HaispaceBooths — App/Views/Operator
+// HaispaceRuntime — App/Views/Operator
 //
 // Layar modal untuk melihat, menyalin, dan membagikan log sistem.
 

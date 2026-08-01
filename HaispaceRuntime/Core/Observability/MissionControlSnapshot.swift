@@ -1,5 +1,5 @@
 // MissionControlSnapshot.swift
-// HaispaceBooths — Core/Observability
+// HaispaceRuntime — Core/Observability
 //
 // Satu objek agregat stabil yang membawa semua data yang dibutuhkan
 // Mission Control untuk dirender. ViewModel hanya membungkus ini.

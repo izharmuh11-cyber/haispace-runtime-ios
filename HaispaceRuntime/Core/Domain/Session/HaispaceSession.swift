@@ -1,5 +1,5 @@
 // HaispaceSession.swift
-// HaispaceBooths — Core/Domain/Session
+// HaispaceRuntime — Core/Domain/Session
 //
 // Session Aggregate Root — fondasi Runtime Haispace.
 //

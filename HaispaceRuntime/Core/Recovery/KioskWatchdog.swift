@@ -1,5 +1,5 @@
 // KioskWatchdog.swift
-// HaispaceBooths — Core/Recovery
+// HaispaceRuntime — Core/Recovery
 //
 // In-process Watchdog untuk mendeteksi & memulihkan kondisi abnormal kiosk.
 //
@@ -105,7 +105,7 @@ public actor KioskWatchdog {
 
     // MARK: - Orphaned Session Check (dipanggil saat launch)
 
-    /// Cek sesi orphaned dari run sebelumnya — panggil dari HaispaceBoothsApp.onAppear
+    /// Cek sesi orphaned dari run sebelumnya — panggil dari HaispaceRuntimeApp.onAppear
     public func checkForOrphanedSessions(decisions: [OrphanedSessionDecision]) {
         for decision in decisions {
             let sessionId = decision.sessionId

@@ -1,5 +1,5 @@
 // DeliveryErrors.swift
-// HaispaceBooths — Core/Capabilities/Delivery
+// HaispaceRuntime — Core/Capabilities/Delivery
 //
 // Enum Error Independen Domain Delivery Capability.
 

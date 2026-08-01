@@ -1,5 +1,5 @@
 // WorkflowSharedTypes.swift
-// HaispaceBooths — Core/Workflow
+// HaispaceRuntime — Core/Workflow
 //
 // Value Objects & Structs Domain Workflow State Machine.
 

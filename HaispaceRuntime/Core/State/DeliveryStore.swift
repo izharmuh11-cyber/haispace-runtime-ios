@@ -1,5 +1,5 @@
 // DeliveryStore.swift
-// HaispaceBooths — Core/State
+// HaispaceRuntime — Core/State
 //
 // Store untuk status pengiriman foto ke tamu setelah pembayaran.
 // Mendukung: AirDrop, Local Network (Bonjour HTTP), Cloud Link.

@@ -1,5 +1,5 @@
 // DeliveryCapability.swift
-// HaispaceBooths — Core/Capabilities/Delivery
+// HaispaceRuntime — Core/Capabilities/Delivery
 //
 // Business Capability Orchestrator Domain Distribusi Foto (Distribution Orchestrator).
 // Mengadopsi Pola Golden Reference Doc #50 (94% Structural Reuse).

@@ -1,5 +1,5 @@
 // PaymentCompatibilityChecker.swift
-// HaispaceBooths — Core/Infrastructure/Compatibility
+// HaispaceRuntime — Core/Infrastructure/Compatibility
 //
 // PR-02: Read Compare + Divergence Detection untuk Payment bounded context.
 //

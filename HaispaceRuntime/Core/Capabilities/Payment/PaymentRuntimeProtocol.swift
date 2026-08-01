@@ -1,5 +1,5 @@
 // PaymentRuntimeProtocol.swift
-// HaispaceBooths — Core/Capabilities/Payment
+// HaispaceRuntime — Core/Capabilities/Payment
 //
 // Protocol Adapter antara PaymentCapability (Orchestrator) 
 // dan Hardware/Gateway Payment Layer (Local QRIS EMVCo CRC16 / Midtrans / Cash).

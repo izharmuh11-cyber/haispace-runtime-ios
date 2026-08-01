@@ -1,5 +1,5 @@
 // FrameMaskCompositor.swift
-// HaispaceBooths — Core/Capabilities/Editing
+// HaispaceRuntime — Core/Capabilities/Editing
 //
 // Legacy Frame Mask & Smart Auto-Fit Metal Engine (SnapBooth Legacy Ported).
 // Preserves exact aspect ratio matching, gravity alignment (0.5/0.5 center snap), and slot boundary clipping.

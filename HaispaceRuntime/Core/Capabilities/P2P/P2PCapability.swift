@@ -1,5 +1,5 @@
 // P2PCapability.swift
-// HaispaceBooths — Core/Capabilities/P2P
+// HaispaceRuntime — Core/Capabilities/P2P
 //
 // Sprint 3 Implementation — Business Capability Orchestrator Domain P2P Networking.
 // Mengadopsi Pola Golden Reference Doc #50 (90% Structural Reuse dari Camera & Editing Capabilities).

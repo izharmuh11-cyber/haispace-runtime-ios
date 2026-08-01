@@ -1,5 +1,5 @@
 // RetryPolicy.swift
-// HaispaceBooths — Core/Retry
+// HaispaceRuntime — Core/Retry
 //
 // Pattern retry yang konsisten untuk semua operasi yang bisa di-retry.
 // Gunakan withRetry() — jangan tulis retry loop sendiri.

@@ -1,5 +1,5 @@
 // DomainEventEnvelope.swift
-// HaispaceBooths — Core/Runtime
+// HaispaceRuntime — Core/Runtime
 //
 // Metadata envelope untuk seluruh Domain Event.
 //

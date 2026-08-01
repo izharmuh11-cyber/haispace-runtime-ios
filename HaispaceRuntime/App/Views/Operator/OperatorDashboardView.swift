@@ -1,5 +1,5 @@
 // OperatorDashboardView.swift
-// HaispaceBooths — App/Views/Operator
+// HaispaceRuntime — App/Views/Operator
 //
 // Layar Utama Operator Dashboard dengan desain Apple Wallet Card & Bento 2.0.
 // Murni diterjemahkan dari komponen React UI terbaik untuk iPadOS Native SwiftUI.

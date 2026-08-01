@@ -1,5 +1,5 @@
 // PaymentCommitment.swift
-// HaispaceBooths — Core/Domain/Session
+// HaispaceRuntime — Core/Domain/Session
 //
 // Domain model untuk komitmen pembayaran sesuai Platform GLOSSARY.
 //

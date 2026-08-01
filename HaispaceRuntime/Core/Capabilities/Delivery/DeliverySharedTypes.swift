@@ -1,5 +1,5 @@
 // DeliverySharedTypes.swift
-// HaispaceBooths — Core/Capabilities/Delivery
+// HaispaceRuntime — Core/Capabilities/Delivery
 //
 // Value Objects & Structs Domain Distribusi Foto Haispace Platform.
 

@@ -1,5 +1,5 @@
 // DeliveryEvents.swift
-// HaispaceBooths — Core/Capabilities/Delivery
+// HaispaceRuntime — Core/Capabilities/Delivery
 //
 // Payload Event Domain Distribusi, Health, dan Metrics.
 

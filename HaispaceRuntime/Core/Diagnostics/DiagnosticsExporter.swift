@@ -1,5 +1,5 @@
 // DiagnosticsExporter.swift
-// HaispaceBooths — Core/Diagnostics
+// HaispaceRuntime — Core/Diagnostics
 //
 // Mengekspor semua log & data diagnostik ke satu bundle ZIP.
 //

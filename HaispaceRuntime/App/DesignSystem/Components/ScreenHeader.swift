@@ -1,5 +1,5 @@
 // ScreenHeader.swift
-// HaispaceBooths — App/DesignSystem/Components
+// HaispaceRuntime — App/DesignSystem/Components
 //
 // Component Judul Layar & Subtitle konsisten di seluruh aplikasi.
 // Ref: Lead Apple UI/UX Review

@@ -1,5 +1,5 @@
 // EditingCapabilityProtocol.swift
-// HaispaceBooths — Core/Capabilities/Editing
+// HaispaceRuntime — Core/Capabilities/Editing
 //
 // Kontrak Kemampuan Bisnis Domain Editing Haispace Platform.
 // BEBAS dari tipe data CoreImage, CIContext, CIFilter, UIImage, Metal.

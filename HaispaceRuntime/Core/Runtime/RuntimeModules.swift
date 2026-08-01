@@ -1,5 +1,5 @@
 // RuntimeModules.swift
-// HaispaceBooths — Core/Runtime
+// HaispaceRuntime — Core/Runtime
 //
 // Module Protocol dan implementasi untuk RuntimeContainer.
 //

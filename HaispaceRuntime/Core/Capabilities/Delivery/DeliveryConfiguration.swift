@@ -1,5 +1,5 @@
 // DeliveryConfiguration.swift
-// HaispaceBooths — Core/Capabilities/Delivery
+// HaispaceRuntime — Core/Capabilities/Delivery
 //
 // Model Konfigurasi Murni Domain Distribusi Foto (Business Level).
 

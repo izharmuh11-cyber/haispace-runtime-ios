@@ -1,5 +1,5 @@
 // OperatorStore.swift
-// HaispaceBooths — Core/State
+// HaispaceRuntime — Core/State
 //
 // Store untuk operator yang sedang aktif di lapangan.
 // Mengelola Mission Control visibility, Personal App PIN, dan operator shift swap.

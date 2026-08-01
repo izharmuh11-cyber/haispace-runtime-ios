@@ -1,5 +1,5 @@
 // RemoteConfigService.swift
-// HaispaceBooths — Core/Config
+// HaispaceRuntime — Core/Config
 //
 // Layanan konfigurasi remote untuk mengubah behavior booth tanpa rebuild app.
 //

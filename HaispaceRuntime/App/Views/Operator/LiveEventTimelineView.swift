@@ -1,5 +1,5 @@
 // LiveEventTimelineView.swift
-// HaispaceBooths — App/Views/Operator
+// HaispaceRuntime — App/Views/Operator
 //
 // Debug overlay untuk menampilkan workflow event timeline secara live.
 // Sesuai dengan "Phase 1: State Machine & Health Contract" untuk memudahkan

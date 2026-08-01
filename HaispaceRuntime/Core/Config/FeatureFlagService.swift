@@ -1,5 +1,5 @@
 // FeatureFlagService.swift
-// HaispaceBooths — Core/Config
+// HaispaceRuntime — Core/Config
 //
 // Feature flags untuk mengontrol fitur tanpa rebuild app.
 // Dibangun di atas RemoteConfigService — flags disimpan dalam remote_config.json.

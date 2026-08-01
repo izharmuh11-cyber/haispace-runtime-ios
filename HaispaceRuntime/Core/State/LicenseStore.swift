@@ -1,5 +1,5 @@
 // LicenseStore.swift
-// HaispaceBooths — Core/State
+// HaispaceRuntime — Core/State
 //
 // Store untuk status lisensi perangkat.
 // Mengelola validasi, heartbeat 7 hari, jailbreak detection, dan demo mode.

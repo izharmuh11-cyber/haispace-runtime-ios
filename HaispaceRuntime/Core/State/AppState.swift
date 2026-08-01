@@ -1,5 +1,5 @@
 // AppState.swift
-// HaispaceBooths — Core/State
+// HaispaceRuntime — Core/State
 //
 // Root Observable — di-inject ke seluruh app via .environment.
 //
@@ -96,7 +96,7 @@ final class AppState {
     // MARK: - Initializer (tanggung jawab 2 dari 3)
 
     /// AppState menerima RuntimeContainer dari luar — tidak pernah membuatnya sendiri.
-    /// Di-inject dari HaispaceBoothsApp setelah RuntimeContainer.build() selesai.
+    /// Di-inject dari HaispaceRuntimeApp setelah RuntimeContainer.build() selesai.
     init(runtime: RuntimeContainer) {
         self.runtime = runtime
     }

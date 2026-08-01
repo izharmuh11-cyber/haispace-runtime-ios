@@ -1,5 +1,5 @@
 // P2PErrors.swift
-// HaispaceBooths — Core/Capabilities/P2P
+// HaispaceRuntime — Core/Capabilities/P2P
 //
 // Enum Error Independen Domain P2P Communication Capability.
 

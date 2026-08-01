@@ -1,5 +1,5 @@
 // PoseGuidePanel.swift
-// HaispaceBooths — App/Views/Components
+// HaispaceRuntime — App/Views/Components
 //
 // Panel pintar di sisi layar yang menampilkan rekomendasi pose ("Living Pose Cards").
 // Berupa video pendek yang berulang tanpa henti (loop) menggunakan AVPlayerLooper.

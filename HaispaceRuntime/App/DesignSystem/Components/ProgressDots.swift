@@ -1,5 +1,5 @@
 // ProgressDots.swift
-// HaispaceBooths — App/DesignSystem/Components
+// HaispaceRuntime — App/DesignSystem/Components
 //
 // Indikator Kemajuan Sesi Foto (Dot Indicators konsisten).
 // Ref: Lead Apple UI/UX Review

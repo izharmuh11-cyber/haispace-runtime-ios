@@ -1,5 +1,5 @@
 // CameraCapabilityProtocol.swift
-// HaispaceBooths — Core/Capabilities/Camera
+// HaispaceRuntime — Core/Capabilities/Camera
 
 import Foundation
 

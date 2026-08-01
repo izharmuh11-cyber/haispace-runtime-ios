@@ -1,5 +1,5 @@
 // SessionFactory.swift
-// HaispaceBooths — Core/Domain/Session
+// HaispaceRuntime — Core/Domain/Session
 //
 // Domain Factory untuk membuat HaispaceSession Aggregate Root baru.
 //

@@ -1,5 +1,5 @@
 // PaymentView.swift
-// HaispaceBooths — App/Views/Customer/Payment
+// HaispaceRuntime — App/Views/Customer/Payment
 //
 // Layar Pembayaran (QRIS / Instant Pay).
 // Refactor: Menggunakan DesignSystem (Tokens, Components, Motion)

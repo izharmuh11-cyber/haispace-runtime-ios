@@ -1,5 +1,5 @@
 // RuntimeDescriptor.swift
-// HaispaceBooths — Core/Runtime
+// HaispaceRuntime — Core/Runtime
 //
 // Self-description object untuk seluruh Platform Runtime Haispace.
 //

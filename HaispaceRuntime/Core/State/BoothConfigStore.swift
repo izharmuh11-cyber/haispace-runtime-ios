@@ -1,5 +1,5 @@
 // BoothConfigStore.swift
-// HaispaceBooths — Core/State
+// HaispaceRuntime — Core/State
 //
 // Store untuk konfigurasi booth yang aktif:
 // paket yang tersedia, frame yang di-download, add-on status.

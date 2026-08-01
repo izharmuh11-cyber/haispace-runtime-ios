@@ -1,5 +1,5 @@
 // CapabilityManager.swift
-// HaispaceBooths — Core/Runtime
+// HaispaceRuntime — Core/Runtime
 //
 // Kontrak untuk Capability Manager — Registry + Resolver + Policy.
 //

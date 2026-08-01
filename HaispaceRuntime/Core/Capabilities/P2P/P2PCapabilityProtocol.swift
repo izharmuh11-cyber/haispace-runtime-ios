@@ -1,5 +1,5 @@
 // P2PCapabilityProtocol.swift
-// HaispaceBooths — Core/Capabilities/P2P
+// HaispaceRuntime — Core/Capabilities/P2P
 //
 // Kontrak Kemampuan Bisnis Domain P2P Communication Haispace Platform.
 // BEBAS dari tipe data MultipeerConnectivity, MCPeerID, NWConnection, atau Socket.
