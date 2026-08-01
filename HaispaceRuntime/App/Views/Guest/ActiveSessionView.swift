@@ -302,15 +302,18 @@ struct ActiveSessionView: View {
                             let thumbnail = PhotoThumbnail(photoId: photoId, data: data, capturedAt: Date(), sortOrder: currentOrder)
                             
                             if let s = appState.currentSession {
+                                RuntimeTimelineLogger.shared.logEvent("CURRENT SESSION FOUND", payload: "sessionId = \(s.sessionId)")
                                 // Inject ke Legacy SessionStore agar muncul di filmstrip
                                 s.photos.receiveThumbnail(thumbnail)
                                 s.photos.upgradeToFullQuality(photoId: photoId, fullData: data)
+                                RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
                                 
                                 currentCount = s.photos.capturedCount
                                 maxCount = s.package_.maxPhotoCount
                                 
                                 if currentCount >= maxCount {
                                     // Pindah ke layar Preview / Pemilihan Foto
+                                    RuntimeTimelineLogger.shared.logEvent("PHOTO SELECTION ROUTE ACTIVATED")
                                     s.proceedToPhotoSelection()
                                 }
                             } else {

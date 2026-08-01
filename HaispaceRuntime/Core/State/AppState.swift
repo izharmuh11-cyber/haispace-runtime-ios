@@ -222,6 +222,7 @@ final class AppState {
             "[Legacy] SessionStore dibuat: \(session.sessionId) — migrasi ke Runtime pending PR-13",
             category: "session"
         )
+        RuntimeTimelineLogger.shared.logEvent("LEGACY SESSION CREATED", payload: "sessionId = \(session.sessionId)")
         return session
     }
 
