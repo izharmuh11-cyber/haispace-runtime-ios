@@ -60,12 +60,16 @@ public actor P2PSessionController: NSObject, MCSessionDelegate, MCNearbyServiceA
         case .connected:
             connectedPeers.insert(peerID)
             logger.info("Peer connected: \(peerID.displayName)")
-            RuntimeTimelineLogger.shared.logEvent("P2P CONNECTED", payload: peerID.displayName)
+            Task { @MainActor in
+                RuntimeTimelineLogger.shared.logEvent("P2P CONNECTED", payload: peerID.displayName)
+            }
             
         case .notConnected:
             connectedPeers.remove(peerID)
             logger.info("Peer disconnected: \(peerID.displayName)")
-            RuntimeTimelineLogger.shared.logEvent("P2P DISCONNECTED", payload: peerID.displayName)
+            Task { @MainActor in
+                RuntimeTimelineLogger.shared.logEvent("P2P DISCONNECTED", payload: peerID.displayName)
+            }
             
         case .connecting:
             logger.info("Peer connecting: \(peerID.displayName)")
@@ -90,7 +94,9 @@ public actor P2PSessionController: NSObject, MCSessionDelegate, MCNearbyServiceA
     
     private func handleInvitation(from peer: MCPeerID, handler: @escaping (Bool, MCSession?) -> Void) {
         logger.info("Accepting invitation from: \(peer.displayName)")
-        RuntimeTimelineLogger.shared.logEvent("P2P INVITATION ACCEPTED", payload: peer.displayName)
+        Task { @MainActor in
+            RuntimeTimelineLogger.shared.logEvent("P2P INVITATION ACCEPTED", payload: peer.displayName)
+        }
         handler(true, self.session)
     }
 }

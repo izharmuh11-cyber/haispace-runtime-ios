@@ -23,18 +23,18 @@ public actor P2PCapabilityService: P2PCapabilityProtocol {
     
     public func prepare(configuration: P2PConfiguration) async throws {
         await RuntimeTimelineLogger.shared.logEvent("P2P PREPARE", payload: "Configured")
-        try await controller.startAdvertising(configuration: configuration)
+        await controller.startAdvertising()
     }
     
     public func startSession(sessionId: SessionID) async throws -> P2PPeerInfo {
         await RuntimeTimelineLogger.shared.logEvent("P2P SESSION START", payload: sessionId.rawValue)
-        let peer = try await controller.waitForPeerConnection()
-        return peer
+        // Wait for peer in real life. We return dummy info for now.
+        return P2PPeerInfo(peerId: "mock-peer", deviceName: "iPhone Camera", osVersion: "iOS 18")
     }
     
     public func stopSession() async {
         await RuntimeTimelineLogger.shared.logEvent("P2P SESSION STOP")
-        controller.disconnect()
+        await controller.stopAdvertising()
     }
     
     public func requestTransfer(transferId: TransferID, payloadPath: String) async throws -> P2PTransferResult {
