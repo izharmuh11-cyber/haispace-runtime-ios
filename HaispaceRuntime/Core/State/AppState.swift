@@ -89,6 +89,7 @@ final class AppState {
         case payment
         case processing
         case delivery
+        case sessionComplete
     }
 
     /// Route saat ini untuk SwiftUI View — di-sync dari WorkflowOrchestrator via send().

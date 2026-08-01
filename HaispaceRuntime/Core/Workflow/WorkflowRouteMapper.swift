@@ -58,8 +58,8 @@ struct WorkflowRouteMapper {
             return .delivery
 
         case .sessionCompleted:
-            // Setelah selesai, kembali ke landing untuk tamu berikutnya
-            return .landing
+            // Tampilkan layar ringkasan sesi sebelum kembali ke landing
+            return .sessionComplete
 
         case .recoveryMode:
             // Recovery mode — tampilkan landing sebagai safe default

@@ -6,21 +6,6 @@
 
 import SwiftUI
 
-// MARK: - Legacy View (Temporarily Removed for M-007 Platform Contract Compliance)
-// View ini melanggar aturan isolasi hardware karena menggunakan AVSampleBufferDisplayLayer secara langsung.
-// Akan diganti dengan View yang mengonsumsi PreviewPipeline di M-008.
-
-struct StreamingVideoView: View {
-    var body: some View {
-        Color.black
-            .overlay {
-                Text("Camera Preview\n(Hardware Isolated)")
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-            }
-    }
-}
-
 // MARK: - Active Session View
 
 struct ActiveSessionView: View {
@@ -303,7 +288,7 @@ struct ActiveSessionView: View {
     
     @ViewBuilder
     private func videoFeedView(geometry: GeometryProxy) -> some View {
-        StreamingVideoView()
+        CameraPreviewView()
             .gesture(
                     DragGesture(minimumDistance: 0)
                         .onEnded { value in

@@ -51,6 +51,9 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
         let path = try await capturePipeline.capturePhoto()
         metrics = CameraMetrics(totalCaptures: metrics.totalCaptures + 1)
         
+        // Simpan path ke CapturedPhotoStore agar View bisa mengaksesnya
+        await CapturedPhotoStore.shared.appendCapture(path: path)
+        
         RuntimeTimelineLogger.shared.logEvent("CAMERA CAPTURE SUCCESS", payload: path)
     }
 }

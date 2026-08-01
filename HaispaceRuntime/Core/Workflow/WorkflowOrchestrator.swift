@@ -82,7 +82,9 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             self.activeSessionId = newSession
             
             Task { @MainActor in
-                RuntimeTimelineLogger.shared.logEvent("SESSION CREATED", payload: newSession.rawValue)
+                RuntimeTimelineLogger.shared.logEvent("SESSION_STARTED", payload: newSession.rawValue)
+                // Bersihkan foto sesi sebelumnya
+                await CapturedPhotoStore.shared.clearCaptures()
             }
 
             // Invariant 19: AuditTrail dibuat SEBELUM stage berubah

@@ -216,6 +216,8 @@ private struct KioskRouterView: View {
             FilterSelectionView()
         case .delivery:
             DeliveryView()
+        case .sessionComplete:
+            SessionCompletionView()
         }
     }
 
