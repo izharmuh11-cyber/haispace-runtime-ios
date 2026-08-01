@@ -292,28 +292,35 @@ struct ActiveSessionView: View {
                 var maxCount = 0
                 
                 await MainActor.run {
-                    if let path = CapturedPhotoStore.shared.latestCapturedPhotoPath,
-                       let data = try? Data(contentsOf: URL(fileURLWithPath: path)) {
-                        
-                        let photoId = UUID().uuidString
-                        let currentOrder = sortOrder ?? (appState.currentSession?.photos.capturedCount ?? 0)
-                        
-                        let thumbnail = PhotoThumbnail(photoId: photoId, data: data, capturedAt: Date(), sortOrder: currentOrder)
-                        
-                        // Inject ke Legacy SessionStore agar muncul di filmstrip
-                        appState.currentSession?.photos.receiveThumbnail(thumbnail)
-                        appState.currentSession?.photos.upgradeToFullQuality(photoId: photoId, fullData: data)
-                        
-                        // Cek apakah kuota foto sudah terpenuhi
-                        if let s = appState.currentSession {
-                            currentCount = s.photos.capturedCount
-                            maxCount = s.package_.maxPhotoCount
+                    if let path = CapturedPhotoStore.shared.latestCapturedPhotoPath {
+                        do {
+                            let data = try Data(contentsOf: URL(fileURLWithPath: path))
                             
-                            if currentCount >= maxCount {
-                                // Pindah ke layar Preview / Pemilihan Foto
-                                s.proceedToPhotoSelection()
+                            let photoId = UUID().uuidString
+                            let currentOrder = sortOrder ?? (appState.currentSession?.photos.capturedCount ?? 0)
+                            
+                            let thumbnail = PhotoThumbnail(photoId: photoId, data: data, capturedAt: Date(), sortOrder: currentOrder)
+                            
+                            if let s = appState.currentSession {
+                                // Inject ke Legacy SessionStore agar muncul di filmstrip
+                                s.photos.receiveThumbnail(thumbnail)
+                                s.photos.upgradeToFullQuality(photoId: photoId, fullData: data)
+                                
+                                currentCount = s.photos.capturedCount
+                                maxCount = s.package_.maxPhotoCount
+                                
+                                if currentCount >= maxCount {
+                                    // Pindah ke layar Preview / Pemilihan Foto
+                                    s.proceedToPhotoSelection()
+                                }
+                            } else {
+                                RuntimeTimelineLogger.shared.logEvent("BRIDGE ERROR: currentSession is nil!")
                             }
+                        } catch {
+                            RuntimeTimelineLogger.shared.logEvent("BRIDGE ERROR: Data load failed - \(error.localizedDescription)")
                         }
+                    } else {
+                        RuntimeTimelineLogger.shared.logEvent("BRIDGE ERROR: latestCapturedPhotoPath is nil!")
                     }
                 }
                 
