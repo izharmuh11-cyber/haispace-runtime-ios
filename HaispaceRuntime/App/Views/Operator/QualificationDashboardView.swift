@@ -103,32 +103,32 @@ public struct QualificationDashboardView: View {
             )
     }
 
-    // MARK: - Failure Injection Panel
+    // MARK: - Scenario Execution Panel
 
     private var failureInjectionPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Failure Injection", systemImage: "exclamationmark.triangle.fill")
+            Label("Scenario Execution", systemImage: "testtube.2")
                 .font(.headline)
-                .foregroundStyle(.orange)
+                .foregroundStyle(.purple)
 
-            Text("Simulasikan kegagalan hardware untuk menguji Recovery items (R-001 hingga R-005).")
+            Text("Jalankan skenario khusus untuk menguji ketahanan runtime.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            ForEach(FailureInjectionType.allCases) { type in
+            ForEach(QualificationScenario.allCases) { scenario in
                 Button {
                     Task {
-                        await FailureInjector.shared.inject(type, into: appState.runtime.capabilityManager)
+                        await ScenarioEngine.shared.run(scenario: scenario, appState: appState)
                     }
                 } label: {
                     HStack {
-                        Image(systemName: type == .restoreAll ? "arrow.counterclockwise" : "bolt.slash.fill")
-                            .foregroundStyle(type == .restoreAll ? .green : .orange)
-                        Text(type.rawValue)
+                        Image(systemName: scenario == .restoreAll ? "arrow.counterclockwise" : "bolt.slash.fill")
+                            .foregroundStyle(scenario == .restoreAll ? .green : .purple)
+                        Text(scenario.rawValue)
                             .font(.subheadline)
                             .foregroundStyle(.primary)
                         Spacer()
-                        Image(systemName: "chevron.right")
+                        Image(systemName: "play.fill")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

@@ -122,13 +122,4 @@ public enum QualificationVerdict: String, Sendable {
     case notQualified = "TIDAK QUALIFIED"
 }
 
-// MARK: - Failure Injection Type
-
-public enum FailureInjectionType: String, CaseIterable, Sendable, Identifiable {
-    public var id: String { rawValue }
-
-    case cameraUnavailable = "Simulasi: Kamera Tidak Tersedia"
-    case printerOffline    = "Simulasi: Printer Offline"
-    case networkLost       = "Simulasi: Jaringan Terputus"
-    case restoreAll        = "Pulihkan Semua Capability"
-}
+// Removed FailureInjectionType
