@@ -5,9 +5,9 @@ import Foundation
 import AVFoundation
 import OSLog
 
-/// Wraps AVCaptureSession. Should not be exposed to UI.
+/// Wraps AVCaptureSession. Should not be exposed to UI except via CameraCapabilityService.
 public actor CameraSessionController {
-    public let captureSession = AVCaptureSession()
+    public nonisolated let captureSession = AVCaptureSession()
     private let logger = Logger(subsystem: "id.haispaceproject.runtime", category: "CameraSession")
     
     private var isConfigured = false

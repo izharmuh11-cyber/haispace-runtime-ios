@@ -11,6 +11,12 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
     private let controller = CameraSessionController()
     public let previewPipeline = PreviewPipeline()
     private let capturePipeline = CapturePipeline()
+
+    /// Exposes the AVCaptureSession for CameraPreviewLayerView (M-010).
+    /// View layer must ONLY use this for rendering — no control of the session.
+    public var captureSession: AVCaptureSession {
+        controller.captureSession
+    }
     
     private var health = CameraHealth(status: .unavailable, fps: 0, isConnected: false)
     private var metrics = CameraMetrics(totalCaptures: 0)

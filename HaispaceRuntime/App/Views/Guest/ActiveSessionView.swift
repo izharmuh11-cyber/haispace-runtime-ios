@@ -5,6 +5,7 @@
 // dengan countdown timer sinkron dan animasi flash shutter.
 
 import SwiftUI
+import AVFoundation
 
 // MARK: - Active Session View
 
@@ -118,6 +119,7 @@ struct ActiveSessionView: View {
             
             startSessionSequence()
             startGestureListener()
+            startCameraIfNeeded()
             
             // Set Vision AI callback
             StreamingDecoderService.shared.onFrameAnalyzed = { count, category, zoom, _ in
@@ -160,7 +162,29 @@ struct ActiveSessionView: View {
     }
     
     // MARK: - Logic
-    
+
+    // M-010: Start camera session if not already running
+    private func startCameraIfNeeded() {
+        Task {
+            let status = AVFoundation.AVCaptureDevice.authorizationStatus(for: .video)
+            if status == .authorized || status == .notDetermined {
+                if status == .notDetermined {
+                    _ = await AVFoundation.AVCaptureDevice.requestAccess(for: .video)
+                }
+                do {
+                    let config = CameraConfiguration(frameRate: 30)
+                    try await CameraCapabilityService.shared.prepare(configuration: config)
+                    let sessionId = SessionID(rawValue: UUID().uuidString)
+                    try await CameraCapabilityService.shared.startSession(sessionId: sessionId)
+                } catch {
+                    await RuntimeTimelineLogger.shared.logEvent(
+                        "CAMERA START FAILED", payload: error.localizedDescription
+                    )
+                }
+            }
+        }
+    }
+
     private func formatTime(_ seconds: Int) -> String {
         let m = seconds / 60
         let s = seconds % 60
@@ -251,10 +275,18 @@ struct ActiveSessionView: View {
             }
         }
         
-        // 2. Kirim perintah trigger ke iPhone via P2P
+        // 2. M-010: Trigger REAL capture via CameraCapabilityService
         Task {
-            let index = sortOrder ?? (appState.currentSession?.photos.capturedCount ?? 0)
-            await P2PMessageRouter.shared.route(.triggerCapture(poseId: replacePhotoId, captureIndex: index))
+            let correlationId = CorrelationID(rawValue: UUID().uuidString)
+            do {
+                try await CameraCapabilityService.shared.requestCapture(correlationId: correlationId)
+            } catch {
+                // Non-fatal: log and continue so session doesn't crash
+                await RuntimeTimelineLogger.shared.logEvent(
+                    "CAPTURE FAILED",
+                    payload: "\(error.localizedDescription)"
+                )
+            }
         }
     }
     
@@ -288,7 +320,8 @@ struct ActiveSessionView: View {
     
     @ViewBuilder
     private func videoFeedView(geometry: GeometryProxy) -> some View {
-        CameraPreviewView()
+        // M-010: Real AVFoundation live preview
+        CameraPreviewLayerView(captureSession: CameraCapabilityService.shared.captureSession)
             .gesture(
                     DragGesture(minimumDistance: 0)
                         .onEnded { value in

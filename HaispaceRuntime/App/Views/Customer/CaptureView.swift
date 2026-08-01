@@ -97,21 +97,12 @@ public struct CaptureView: View {
 
     private var cameraArea: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 24)
-                .fill(AppTheme.Surface.secondary)
-                .overlay(
-                    ZStack {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 64))
-                            .foregroundStyle(AppTheme.Brand.textPrimary.opacity(0.08))
+            // Real live camera feed
+            CameraPreviewLayerView(captureSession: CameraCapabilityService.shared.captureSession)
+                .clipShape(RoundedRectangle(cornerRadius: 24))
 
-                        CornerGuideView()
-                    }
-                )
-
-            Image(systemName: "person.fill")
-                .font(.system(size: 90))
-                .foregroundStyle(AppTheme.Brand.textPrimary.opacity(0.03))
+            // Corner guide overlay
+            CornerGuideView()
         }
         .frame(maxWidth: .infinity)
         .frame(height: 420)
