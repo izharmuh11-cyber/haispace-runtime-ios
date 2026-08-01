@@ -24,7 +24,7 @@ import Foundation
 
 /// Pembungkus metadata untuk SessionDomainEvent.
 /// Dipublikasikan oleh DomainEventPublisher — bukan oleh Session Aggregate.
-public struct DomainEventEnvelope: Codable, Sendable {
+public struct DomainEventEnvelope: Sendable {
 
     // MARK: - Identity
 

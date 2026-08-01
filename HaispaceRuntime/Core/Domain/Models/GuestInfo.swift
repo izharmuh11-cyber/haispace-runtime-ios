@@ -12,7 +12,7 @@ import Foundation
 
 /// Informasi identitas tamu yang mendaftar di kiosk iPad.
 /// Data ini tidak sensitif — hanya nama dan Instagram/nomor HP untuk pengiriman foto.
-struct GuestInfo: Codable, Equatable {
+public struct GuestInfo: Codable, Equatable {
     let name: String
     let instagram: String?      // Opsional — untuk tag foto di social media
     let phoneNumber: String?    // Opsional — untuk kirim download link via WA

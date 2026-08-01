@@ -12,7 +12,7 @@ import Foundation
 
 /// Paket foto yang ditawarkan kepada tamu.
 /// Harga dalam Rupiah (Integer, bukan Double — menghindari floating point issues).
-struct BoothPackage: Codable, Equatable, Identifiable {
+public struct BoothPackage: Codable, Equatable, Identifiable {
     let id: String
     let name: String            // Contoh: "The Stage", "The Mini", "The VIP"
     let price: Int              // Dalam Rupiah, contoh: 50000
@@ -49,7 +49,7 @@ struct BoothPackage: Codable, Equatable, Identifiable {
 // MARK: - AddonType
 
 /// Jenis add-on yang bisa ditambahkan ke paket
-enum AddonType: String, Codable, CaseIterable {
+public enum AddonType: String, Codable, CaseIterable {
     case filter         // LUT filter premium
     case poseGuide      // AI pose guide
     case memoryBook     // Memory book collage

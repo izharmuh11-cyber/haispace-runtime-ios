@@ -247,9 +247,5 @@ private struct KioskRouterView: View {
 
 #Preview("Root — App Loading") {
     RootView()
-        .environment({
-            let state = AppState()
-            state.isAppReady = false
-            return state
-        }())
+        .environment(AppState.preview)
 }
