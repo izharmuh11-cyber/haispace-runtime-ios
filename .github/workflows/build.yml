@@ -1,4 +1,4 @@
-name: M-004 — The First Heartbeat
+name: M-004 The First Heartbeat
 
 on:
   push:
@@ -9,39 +9,24 @@ on:
 
 jobs:
   build:
-    name: "🫀 Build — iPad Simulator"
+    name: Build iPad Simulator
     runs-on: macos-15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode 16
-        run: |
-          sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || \
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-          xcodebuild -version
+      - name: Xcode Version
+        run: xcodebuild -version
 
       - name: Install XcodeGen
-        run: |
-          brew install xcodegen
-          xcodegen version
+        run: brew install xcodegen
 
       - name: Generate Xcode Project
         run: xcodegen generate --spec project.yml
 
-      - name: Resolve Dependencies
+      - name: Build for Simulator
         run: |
-          xcodebuild -resolvePackageDependencies \
-            -project HaispaceRuntime.xcodeproj \
-            -scheme HaispaceRuntime \
-            2>&1 | tail -20
-
-      - name: "🔨 Build for Simulator"
-        run: |
-          # List available simulators for debugging
-          xcrun simctl list devicetypes | grep iPad | head -5
-
           xcodebuild build \
             -project HaispaceRuntime.xcodeproj \
             -scheme HaispaceRuntime \
@@ -52,24 +37,7 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             HSP_API_BASE_URL="https://api.haispaceproject.my.id" \
             HSP_MIDTRANS_CLIENT_KEY="ci-placeholder" \
-            HSP_LICENSE_KEY="ci-placeholder" \
-            2>&1 | grep -E "(error:|warning: |Build succeeded|Build FAILED|Compiling |Linking )
+            HSP_LICENSE_KEY="ci-placeholder"
 
-      - name: "✅ Report Build Status"
-        if: success()
-        run: |
-          echo ""
-          echo "╔══════════════════════════════════════════════════════╗"
-          echo "║  M-004 — THE FIRST HEARTBEAT                        ║"
-          echo "║  BUILD SUCCEEDED ✅                                  ║"
-          echo "║  haispace-runtime-ios STATUS: ALIVE 🟢              ║"
-          echo "╚══════════════════════════════════════════════════════╝"
-
-      - name: "❌ Report Build Failure"
-        if: failure()
-        run: |
-          echo ""
-          echo "╔══════════════════════════════════════════════════════╗"
-          echo "║  M-004 — BUILD FAILED ❌                            ║"
-          echo "║  Check errors above and report to Antigravity       ║"
-          echo "╚══════════════════════════════════════════════════════╝"
+      - name: Build Succeeded
+        run: echo "haispace-runtime-ios ALIVE"
