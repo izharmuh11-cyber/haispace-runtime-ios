@@ -7,7 +7,7 @@ struct BootstrapLoadingView: View {
     let currentState: BootstrapState
     
     // Obervasi logger agar UI terupdate saat log bertambah
-    @State private var logger = BootstrapObservabilityLogger.shared
+    @State private var logger = RuntimeTimelineLogger.shared
     
     var body: some View {
         ZStack {

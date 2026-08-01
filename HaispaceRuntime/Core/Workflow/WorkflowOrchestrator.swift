@@ -13,8 +13,9 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
     // MARK: - State Properties
     private(set) public var currentStage: WorkflowStage = .landing {
         didSet {
+            let stageValue = currentStage
             Task { @MainActor in
-                RuntimeTimelineLogger.shared.logEvent("WORKFLOW", payload: "Stage -> \(currentStage)")
+                RuntimeTimelineLogger.shared.logEvent("WORKFLOW", payload: "Stage -> \(stageValue)")
             }
         }
     }
