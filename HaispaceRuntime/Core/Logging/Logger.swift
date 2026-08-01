@@ -190,11 +190,14 @@ struct LocalLogWriter {
 
     /// Ambil isi log sebagai string (untuk dikirim ke support/debugging)
     static func readLogContent() -> String {
-        guard let url = logFileURL(),
-              let content = try? String(contentsOf: url, encoding: .utf8) else {
-            return "Log file tidak ditemukan atau kosong."
+        guard let url = logFileURL() else { return "logFileURL is nil" }
+        do {
+            let content = try String(contentsOf: url, encoding: .utf8)
+            if content.isEmpty { return "File exists but content is empty." }
+            return content
+        } catch {
+            return "Failed to read log: \(error.localizedDescription)"
         }
-        return content
     }
 
     /// Hapus semua log (dipanggil operator dari Mission Control)
