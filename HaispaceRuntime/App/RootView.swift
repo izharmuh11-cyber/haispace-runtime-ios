@@ -87,11 +87,11 @@ struct RootView: View {
             MissionControlView()
                 .environment(MissionControlViewModel(
                     healthAggregator: HealthAggregator(
-                        camera: appState.orchestrator.camera,
-                        editing: appState.orchestrator.editing,
-                        payment: appState.orchestrator.payment,
-                        delivery: appState.orchestrator.delivery,
-                        p2p: appState.orchestrator.p2p
+                        camera: appState.runtime.orchestrator.camera,
+                        editing: appState.runtime.orchestrator.editing,
+                        payment: appState.runtime.orchestrator.payment,
+                        delivery: appState.runtime.orchestrator.delivery,
+                        p2p: appState.runtime.orchestrator.p2p
                     ),
                     appState: appState
                 ))
