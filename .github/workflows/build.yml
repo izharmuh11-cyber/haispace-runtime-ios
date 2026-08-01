@@ -25,7 +25,7 @@ jobs:
       - name: Generate Xcode Project
         run: xcodegen generate --spec project.yml
 
-      - name: Build for Simulator
+      - name: Build for Simulator (Validation)
         run: |
           xcodebuild build \
             -project HaispaceRuntime.xcodeproj \
@@ -37,12 +37,51 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             HSP_API_BASE_URL="https://api.haispaceproject.my.id" \
             HSP_MIDTRANS_CLIENT_KEY="ci-placeholder" \
-            HSP_LICENSE_KEY="ci-placeholder" > build.log 2>&1 || {
+            HSP_LICENSE_KEY="ci-placeholder" > build_sim.log 2>&1 || {
               echo "=== BUILD ERRORS ==="
-              grep "error:" build.log
+              grep "error:" build_sim.log
               echo "===================="
               exit 1
             }
+
+      - name: Build for Device (Unsigned)
+        run: |
+          xcodebuild build \
+            -project HaispaceRuntime.xcodeproj \
+            -scheme HaispaceRuntime \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            HSP_API_BASE_URL="https://api.haispaceproject.my.id" \
+            HSP_MIDTRANS_CLIENT_KEY="ci-placeholder" \
+            HSP_LICENSE_KEY="ci-placeholder" > build_dev.log 2>&1 || {
+              echo "=== BUILD ERRORS (Device) ==="
+              grep "error:" build_dev.log
+              echo "===================="
+              exit 1
+            }
+
+      - name: Create IPA for AltStore
+        run: |
+          # The app bundle is located in the build directory. Let's find it.
+          APP_PATH=$(find build/Release-iphoneos -name "HaiBooth.app" -o -name "HaispaceRuntime.app" | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: .app file not found"
+            exit 1
+          fi
+          
+          echo "Found app at: $APP_PATH"
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r HaispaceRuntime.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HaispaceRuntime-AltStore
+          path: HaispaceRuntime.ipa
 
       - name: Build Succeeded
         run: echo "haispace-runtime-ios ALIVE"
