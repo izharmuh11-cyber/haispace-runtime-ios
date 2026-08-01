@@ -93,7 +93,7 @@ public actor HealthAggregator {
             editingHealth: editing.healthSnapshot,
             paymentHealth: payment.healthSnapshot,
             deliveryHealth: delivery.healthSnapshot,
-            p2pHealth: p2p.healthSnapshot,
+            p2pHealth: await p2p.healthSnapshot,
             activeSessionRecord: activeSessionId.flatMap {
                 SessionAuditTrail.read(sessionId: $0)
             },

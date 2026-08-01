@@ -12,7 +12,7 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
     public let previewPipeline = PreviewPipeline()
     private let capturePipeline = CapturePipeline()
     
-    private var health = CameraHealth(status: .unknown, fps: 0, isConnected: false)
+    private var health = CameraHealth(status: .unavailable, fps: 0, isConnected: false)
     private var metrics = CameraMetrics(totalCaptures: 0)
     
     public var healthSnapshot: CameraHealth {

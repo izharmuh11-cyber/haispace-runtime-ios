@@ -9,10 +9,10 @@ import Foundation
 public protocol P2PCapabilityProtocol: Sendable {
     
     /// Snapshot kesehatan domain P2P saat ini (Read-Only O(1))
-    var healthSnapshot: P2PHealth { get }
+    var healthSnapshot: P2PHealth { get async }
     
     /// Snapshot metrik performa domain P2P saat ini (Read-Only O(1))
-    var metricsSnapshot: P2PMetrics { get }
+    var metricsSnapshot: P2PMetrics { get async }
     
     /// Menyiapkan P2P Mesh dengan konfigurasi tertentu
     func prepare(configuration: P2PConfiguration) async throws
