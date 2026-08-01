@@ -192,14 +192,12 @@ struct ActiveSessionView: View {
     }
     
     private func startSessionSequence() {
-        guard let session = session else { return }
-        
         // Mulai briefing 3 detik
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             withAnimation(.spring) {
                 isBriefing = false
             }
-            session.start()
+            session?.start()
         }
     }
     
