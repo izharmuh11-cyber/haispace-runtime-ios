@@ -3,6 +3,7 @@
 
 import Foundation
 import Observation
+import AVFoundation
 
 @Observable
 public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked Sendable {
