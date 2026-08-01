@@ -32,7 +32,7 @@ public final class ScenarioEngine {
 
     // MARK: - Run Scenario
 
-    public func run(scenario: QualificationScenario, appState: AppState) async {
+    func run(scenario: QualificationScenario, appState: AppState) async {
         let capManager = appState.runtime.capabilityManager
 
         switch scenario {

@@ -54,7 +54,7 @@ public final class QualificationEngine {
 
     // MARK: - Run All
 
-    public func runAll(appState: AppState) async {
+    func runAll(appState: AppState) async {
         guard !isRunning else { return }
         isRunning = true
         logger.info("[QualificationEngine] Starting full qualification run...")
@@ -86,7 +86,7 @@ public final class QualificationEngine {
     // MARK: - M-009B: Certification Execution (Resolution M-009B-06)
 
     /// Mengeksekusi 5 Stage Sertifikasi secara berurutan dan menghasilkan EvidencePackage.
-    public func runCertification(appState: AppState) async {
+    func runCertification(appState: AppState) async {
         guard !isRunning else { return }
         isRunning = true
         scenarioEvidence = []
