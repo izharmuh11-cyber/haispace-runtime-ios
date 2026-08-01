@@ -276,11 +276,20 @@ struct ActiveSessionView: View {
         // 2. M-010: Trigger REAL capture via CameraCapabilityService
         Task {
             let correlationId = CorrelationID(rawValue: UUID().uuidString)
+            await RuntimeTimelineLogger.shared.logEvent("CAMERA CAPTURE REQUESTED")
             do {
                 try await CameraCapabilityService.shared.requestCapture(correlationId: correlationId)
+                await RuntimeTimelineLogger.shared.logEvent("PHOTO SAVED")
+                await RuntimeTimelineLogger.shared.logEvent("CAPTURED PHOTO STORE UPDATED")
                 
-                // M-010.2: Jembatani hasil capture dari hardware ke Legacy UI State (SessionStore)
+                // TEMPORARY COMPATIBILITY BRIDGE
+                //
+                // M-010:
+                // Bridge CameraCapability -> Legacy SessionStore
+                //
+                // Remove after M-013 when SessionStore is fully retired.
                 await MainActor.run {
+                    await RuntimeTimelineLogger.shared.logEvent("LEGACY BRIDGE INJECTED")
                     if let path = CapturedPhotoStore.shared.latestCapturedPhotoPath,
                        let data = try? Data(contentsOf: URL(fileURLWithPath: path)) {
                         
@@ -292,10 +301,15 @@ struct ActiveSessionView: View {
                         // Inject ke Legacy SessionStore agar muncul di filmstrip
                         appState.currentSession?.photos.receiveThumbnail(thumbnail)
                         appState.currentSession?.photos.upgradeToFullQuality(photoId: photoId, fullData: data)
+                        await RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
                         
                         // Cek apakah kuota foto sudah terpenuhi
                         if let s = appState.currentSession {
-                            if s.photos.capturedCount >= s.package_.maxPhotoCount {
+                            let count = s.photos.capturedCount
+                            let max = s.package_.maxPhotoCount
+                            await RuntimeTimelineLogger.shared.logEvent("PHOTO COUNT \(count)/\(max)")
+                            
+                            if count >= max {
                                 // Pindah ke layar Preview / Pemilihan Foto
                                 s.proceedToPhotoSelection()
                             }
