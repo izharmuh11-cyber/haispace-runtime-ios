@@ -2,6 +2,8 @@
 // HaispaceRuntime — Core/State
 
 import Foundation
+import Observation
+import Network
 
 public enum CapabilityStatus: String, Codable, Sendable {
     case available
@@ -26,32 +28,47 @@ public final class SystemCapabilityState: ObservableObject, @unchecked Sendable 
     
     public func updateCamera(status: CapabilityStatus) {
         state.camera = status
-        BootstrapObservabilityLogger.shared.logEvent("CAPABILITY UPDATED: Camera -> \(status.rawValue)")
+        RuntimeTimelineLogger.shared.logEvent("CAPABILITY UPDATED", payload: "Camera -> \(status.rawValue)")
     }
     
     public func updatePrinter(status: CapabilityStatus) {
         state.printer = status
-        BootstrapObservabilityLogger.shared.logEvent("CAPABILITY UPDATED: Printer -> \(status.rawValue)")
+        RuntimeTimelineLogger.shared.logEvent("CAPABILITY UPDATED", payload: "Printer -> \(status.rawValue)")
     }
     
     public func updateNetwork(status: CapabilityStatus) {
         state.network = status
-        BootstrapObservabilityLogger.shared.logEvent("CAPABILITY UPDATED: Network -> \(status.rawValue)")
+        RuntimeTimelineLogger.shared.logEvent("CAPABILITY UPDATED", payload: "Network -> \(status.rawValue)")
     }
     
     public func updateStorage(status: CapabilityStatus) {
         state.storage = status
-        BootstrapObservabilityLogger.shared.logEvent("CAPABILITY UPDATED: Storage -> \(status.rawValue)")
+        RuntimeTimelineLogger.shared.logEvent("CAPABILITY UPDATED", payload: "Storage -> \(status.rawValue)")
     }
     
     public func performDiscovery() async {
-        // Simulasi discovery hardware & OS
-        // Dalam implementasi nyata, ini mengecek space storage, reachability, dll.
-        updateNetwork(status: .available)
+        // 1. Network Discovery via Network Framework
+        let monitor = NWPathMonitor()
+        let queue = DispatchQueue(label: "NetworkDiscovery")
+        monitor.pathUpdateHandler = { [weak self] path in
+            Task { @MainActor in
+                if path.status == .satisfied {
+                    self?.updateNetwork(status: .available)
+                } else {
+                    self?.updateNetwork(status: .unavailable)
+                }
+            }
+        }
+        monitor.start(queue: queue)
+        
+        // 2. Storage Check (Simulated for now)
         updateStorage(status: .available)
         
-        // Printer & Camera kita asumsikan unavailable sampai di-connect
+        // 3. Printer & Camera & P2P (Simulated M-006: Unavailable until actual drivers connect)
         updatePrinter(status: .unavailable)
         updateCamera(status: .unavailable)
+        
+        // Catat tambahan P2P (meski kita belum nambah property di state)
+        RuntimeTimelineLogger.shared.logEvent("CAPABILITY UPDATED", payload: "P2P -> unavailable")
     }
 }

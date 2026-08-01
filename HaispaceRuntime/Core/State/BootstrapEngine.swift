@@ -18,7 +18,8 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
     @Published public private(set) var currentState: BootstrapState = .pending
     
     public let capabilityManager: SystemCapabilityState
-    private let api = BootstrapAPI.shared
+    private let regService = DeviceRegistrationService.shared
+    private let manifestService = ManifestService.shared
     
     public init(capabilityManager: SystemCapabilityState) {
         self.capabilityManager = capabilityManager
@@ -29,7 +30,7 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
     }
     
     public func startBootstrapSequence() async {
-        let logger = BootstrapObservabilityLogger.shared
+        let logger = RuntimeTimelineLogger.shared
         logger.logEvent("BOOT STARTED")
         
         do {
@@ -38,33 +39,36 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
             logger.logEvent("CAPABILITY DISCOVERY STARTED")
             await capabilityManager.performDiscovery()
             let caps = await capabilityManager.state
-            logger.logEvent("CAPABILITIES LOADED: [Camera: \(caps.camera), Printer: \(caps.printer), Net: \(caps.network)]")
+            logger.logEvent("CAPABILITIES LOADED", payload: "[Camera: \(caps.camera), Printer: \(caps.printer), Net: \(caps.network)]")
             
             // 2. CLOCK SYNC
             updateState(.clockSync)
             logger.logEvent("CLOCK SYNC STARTED")
-            let timeRes = try await api.fetchServerTime()
-            logger.logEvent("CLOCK SYNC SUCCESS: ServerTime = \(timeRes.serverTime)")
+            let timeRes = try await regService.fetchServerTime()
+            logger.logEvent("CLOCK SYNC SUCCESS", payload: "ServerTime = \(timeRes.serverTime)")
             
             // 3. CAPABILITIES / DEVICE REGISTRATION
             updateState(.deviceRegistration)
             logger.logEvent("DEVICE REGISTRATION STARTED")
-            let capRes = try await api.fetchCapabilities()
-            logger.logEvent("DEVICE REGISTERED. Latest Client Version: \(capRes.latestClientVersion)")
+            let capRes = try await regService.fetchCapabilities()
+            logger.logEvent("DEVICE REGISTERED", payload: "Latest Client Version: \(capRes.latestClientVersion)")
             
             // 4. MANIFEST DOWNLOAD
             updateState(.manifestDownload)
             logger.logEvent("MANIFEST DOWNLOAD STARTED")
-            let manifest = try await api.fetchManifest()
-            logger.logEvent("MANIFEST READY (v\(manifest.version))")
+            let manifest = try await manifestService.fetchManifest()
+            logger.logEvent("MANIFEST READY", payload: "v\(manifest.version)")
             
-            // 5. READY
+            // 5. HEARTBEAT START
+            HeartbeatService.shared.startPinging()
+            
+            // 6. READY
             updateState(.ready)
             logger.logEvent("STATE READY")
             
         } catch {
             updateState(.error)
-            logger.logEvent("BOOT ERROR: \(error.localizedDescription)")
+            logger.logEvent("BOOT ERROR", payload: error.localizedDescription)
         }
     }
 }

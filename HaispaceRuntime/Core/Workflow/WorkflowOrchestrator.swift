@@ -11,7 +11,13 @@ import Foundation
 public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol {
     
     // MARK: - State Properties
-    private(set) public var currentStage: WorkflowStage = .landing
+    private(set) public var currentStage: WorkflowStage = .landing {
+        didSet {
+            Task { @MainActor in
+                RuntimeTimelineLogger.shared.logEvent("WORKFLOW", payload: "Stage -> \(currentStage)")
+            }
+        }
+    }
     private var activeSessionId: SessionID?
     private var currentCorrelationId: CorrelationID?
     private var activePhotoId: PhotoID?
@@ -73,6 +79,13 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
         case .startGuestRegistration:
             let newSession = SessionID()
             self.activeSessionId = newSession
+            
+            Task { @MainActor in
+                RuntimeTimelineLogger.shared.logEvent("SESSION CREATED", payload: newSession.rawValue)
+            }
+            
+            // Inisialisasi Aggregate Root
+            self.activeSession = HaispaceSession(id: newSession, metadata: SessionMetadata(eventCode: "EVT-TEST", boothId: "B-001"))
 
             // Invariant 19: AuditTrail dibuat SEBELUM stage berubah
             SessionAuditTrail.create(sessionId: newSession.rawValue)
