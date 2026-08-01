@@ -278,6 +278,30 @@ struct ActiveSessionView: View {
             let correlationId = CorrelationID(rawValue: UUID().uuidString)
             do {
                 try await CameraCapabilityService.shared.requestCapture(correlationId: correlationId)
+                
+                // M-010.2: Jembatani hasil capture dari hardware ke Legacy UI State (SessionStore)
+                await MainActor.run {
+                    if let path = CapturedPhotoStore.shared.latestCapturedPhotoPath,
+                       let data = try? Data(contentsOf: URL(fileURLWithPath: path)) {
+                        
+                        let photoId = UUID().uuidString
+                        let currentOrder = sortOrder ?? (appState.currentSession?.photos.capturedCount ?? 0)
+                        
+                        let thumbnail = PhotoThumbnail(photoId: photoId, data: data, capturedAt: Date(), sortOrder: currentOrder)
+                        
+                        // Inject ke Legacy SessionStore agar muncul di filmstrip
+                        appState.currentSession?.photos.receiveThumbnail(thumbnail)
+                        appState.currentSession?.photos.upgradeToFullQuality(photoId: photoId, fullData: data)
+                        
+                        // Cek apakah kuota foto sudah terpenuhi
+                        if let s = appState.currentSession {
+                            if s.photos.capturedCount >= s.package_.maxPhotoCount {
+                                // Pindah ke layar Preview / Pemilihan Foto
+                                s.proceedToPhotoSelection()
+                            }
+                        }
+                    }
+                }
             } catch {
                 // Non-fatal: log and continue so session doesn't crash
                 await RuntimeTimelineLogger.shared.logEvent(
