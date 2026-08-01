@@ -37,7 +37,7 @@ public struct MissionControlView: View {
                         Task { try? await appState.send(.cancelSessionByOperator) }
                     },
                     onReconnectCamera: {
-                        Task { await appState.orchestrator.p2p.stopSession() }
+                        Task { await appState.runtime.orchestrator.p2p.stopSession() }
                     },
                     onUploadLog: {
                         isUploadingLog = true
