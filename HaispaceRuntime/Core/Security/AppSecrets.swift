@@ -40,7 +40,7 @@ enum AppSecretConfig {
         static var publicBaseURL: String { "https://r2.haispace.id" }
 
         /// Endpoint S3-compatible
-        static var endpoint: String { "66c40e0caaaa333ca0f4977bf32be2a7.r2.cloudflarestorage.com" }
+        static var endpoint: String { "https://66c40e0caaaa333ca0f4977bf32be2a7.r2.cloudflarestorage.com" }
     }
 
     // MARK: - QR Payload
