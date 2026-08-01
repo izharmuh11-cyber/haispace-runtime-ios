@@ -53,7 +53,7 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
     }
     
     public func requestCapture(correlationId: CorrelationID) async throws {
-        await RuntimeTimelineLogger.shared.logEvent("CAMERA CAPTURE REQUESTED", payload: correlationId.rawValue)
+        // [1] Shutter Pressed is logged in ActiveSessionView
         
         let path = try await capturePipeline.capturePhoto()
         metrics = CameraMetrics(totalCaptures: metrics.totalCaptures + 1)
@@ -61,6 +61,6 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
         // Simpan path ke CapturedPhotoStore agar View bisa mengaksesnya
         await CapturedPhotoStore.shared.appendCapture(path: path)
         
-        await RuntimeTimelineLogger.shared.logEvent("CAMERA CAPTURE SUCCESS", payload: path)
+        await RuntimeTimelineLogger.shared.logEvent("[6] CapturedPhotoStore Updated", payload: path)
     }
 }

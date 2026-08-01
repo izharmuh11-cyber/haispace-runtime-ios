@@ -276,11 +276,9 @@ struct ActiveSessionView: View {
         // 2. M-010: Trigger REAL capture via CameraCapabilityService
         Task {
             let correlationId = CorrelationID(rawValue: UUID().uuidString)
-            await RuntimeTimelineLogger.shared.logEvent("CAMERA CAPTURE REQUESTED")
+            await RuntimeTimelineLogger.shared.logEvent("[1] Shutter Pressed")
             do {
                 try await CameraCapabilityService.shared.requestCapture(correlationId: correlationId)
-                await RuntimeTimelineLogger.shared.logEvent("PHOTO SAVED")
-                await RuntimeTimelineLogger.shared.logEvent("CAPTURED PHOTO STORE UPDATED")
                 
                 // TEMPORARY COMPATIBILITY BRIDGE
                 //
@@ -288,7 +286,7 @@ struct ActiveSessionView: View {
                 // Bridge CameraCapability -> Legacy SessionStore
                 //
                 // Remove after M-013 when SessionStore is fully retired.
-                await RuntimeTimelineLogger.shared.logEvent("LEGACY BRIDGE INJECTED")
+                await RuntimeTimelineLogger.shared.logEvent("[7] SessionStore Bridge Injected")
                 
                 var currentCount = 0
                 var maxCount = 0
@@ -319,7 +317,7 @@ struct ActiveSessionView: View {
                     }
                 }
                 
-                await RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
+                await RuntimeTimelineLogger.shared.logEvent("[8] UI Received (Thumbnail added)")
                 if maxCount > 0 {
                     await RuntimeTimelineLogger.shared.logEvent("PHOTO COUNT \(currentCount)/\(maxCount)")
                 }
