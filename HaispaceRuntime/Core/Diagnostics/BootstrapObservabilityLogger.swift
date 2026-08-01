@@ -2,15 +2,18 @@
 // HaispaceRuntime — Core/Diagnostics
 
 import Foundation
+import Observation
 import OSLog
 
-public final class BootstrapObservabilityLogger: @unchecked Sendable {
+@Observable
+@MainActor
+public final class BootstrapObservabilityLogger {
     public static let shared = BootstrapObservabilityLogger()
     
     private let logger = Logger(subsystem: "id.haispaceproject.runtime", category: "Bootstrap")
     
-    // Simpan timeline in-memory jika ingin ditampilkan di UI nantinya
-    private(set) var timeline: [String] = []
+    // Simpan timeline in-memory agar bisa ditampilkan di UI
+    public private(set) var timeline: [String] = []
     
     private init() {}
     

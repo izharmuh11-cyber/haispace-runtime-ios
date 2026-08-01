@@ -52,9 +52,9 @@ struct RootView: View {
     
     @ViewBuilder
     private var mainContent: some View {
-        if !appState.isAppReady {
-            // App masih loading (setup belum selesai)
-            SplashView()
+        if !appState.isAppReady || appState.runtime.bootstrapEngine.currentState != .ready {
+            // App masih loading (setup belum selesai atau M-005 Booting belum beres)
+            BootstrapLoadingView(currentState: appState.runtime.bootstrapEngine.currentState)
 
         } else if appState.license.status == .suspended || appState.license.status == .invalid(reason: .checksumMismatch) {
             // Jailbreak terdeteksi atau lisensi dicabut (fatal)
