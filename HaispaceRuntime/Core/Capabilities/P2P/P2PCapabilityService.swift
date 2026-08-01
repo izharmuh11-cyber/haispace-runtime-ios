@@ -29,7 +29,7 @@ public actor P2PCapabilityService: P2PCapabilityProtocol {
     public func startSession(sessionId: SessionID) async throws -> P2PPeerInfo {
         await RuntimeTimelineLogger.shared.logEvent("P2P SESSION START", payload: sessionId.rawValue)
         // Wait for peer in real life. We return dummy info for now.
-        return P2PPeerInfo(peerId: "mock-peer", deviceName: "iPhone Camera", osVersion: "iOS 18")
+        return P2PPeerInfo(deviceId: "mock-peer", deviceName: "iPhone Camera", role: "iPhoneCamera", activeTransport: .multipeer)
     }
     
     public func stopSession() async {
@@ -39,10 +39,10 @@ public actor P2PCapabilityService: P2PCapabilityProtocol {
     
     public func requestTransfer(transferId: TransferID, payloadPath: String) async throws -> P2PTransferResult {
         await RuntimeTimelineLogger.shared.logEvent("P2P TRANSFER REQ", payload: payloadPath)
-        return P2PTransferResult(transferId: transferId, status: .completed, bytesTransferred: 1024, durationMs: 50)
+        return P2PTransferResult(transferId: transferId, sessionId: SessionID(), outputReference: payloadPath, totalBytes: 1024, transferDurationMs: 50.0)
     }
     
     public func requestResume(transferId: TransferID, fromChunkIndex: UInt32) async throws -> P2PTransferResult {
-        return P2PTransferResult(transferId: transferId, status: .completed, bytesTransferred: 1024, durationMs: 50)
+        return P2PTransferResult(transferId: transferId, sessionId: SessionID(), outputReference: "resumed", totalBytes: 1024, transferDurationMs: 50.0, isResumed: true)
     }
 }
