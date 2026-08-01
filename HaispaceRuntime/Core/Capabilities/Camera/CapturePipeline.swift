@@ -3,6 +3,7 @@
 
 import Foundation
 import AVFoundation
+import UIKit
 
 /// Handles high-resolution photo capture without exposing AVFoundation to the orchestrator.
 public actor CapturePipeline: NSObject, AVCapturePhotoCaptureDelegate {
@@ -63,6 +64,23 @@ public actor CapturePipeline: NSObject, AVCapturePhotoCaptureDelegate {
         }
         
         await RuntimeTimelineLogger.shared.logEvent("[4] Data Created (size: \(fileData.count) bytes)")
+        
+        // M-010 Phase 3: EXIF Diagnostic
+        if let image = UIImage(data: fileData) {
+            let orientationStr: String
+            switch image.imageOrientation {
+            case .up: orientationStr = "Up (Normal)"
+            case .down: orientationStr = "Down (180 deg)"
+            case .left: orientationStr = "Left (90 deg CCW)"
+            case .right: orientationStr = "Right (90 deg CW)"
+            case .upMirrored: orientationStr = "Up Mirrored"
+            case .downMirrored: orientationStr = "Down Mirrored"
+            case .leftMirrored: orientationStr = "Left Mirrored"
+            case .rightMirrored: orientationStr = "Right Mirrored"
+            @unknown default: orientationStr = "Unknown"
+            }
+            await RuntimeTimelineLogger.shared.logEvent("EXIF DIAGNOSTIC", payload: "Image Orientation: \(orientationStr)")
+        }
         
         // Save to temporary local storage
         let fileName = "capture_\(UUID().uuidString).jpg"

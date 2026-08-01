@@ -174,16 +174,20 @@ private struct PhotoGridItem: View {
             ZStack(alignment: .topTrailing) {
                 // Gambar
                 if let image = photo.thumbnailImage {
+                    let aspect = image.size.width / image.size.height
+                    let cardHeight: CGFloat = 260
+                    let cardWidth = cardHeight * aspect
+                    
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 200, height: 260)
+                        .frame(width: cardWidth, height: cardHeight)
                         .clipped()
                         .cornerRadius(16)
                 } else {
                     Rectangle()
                         .fill(Color.white.opacity(0.1))
-                        .frame(width: 200, height: 260)
+                        .frame(width: 346, height: 260)
                         .cornerRadius(16)
                         .overlay(ProgressView().tint(.white))
                 }
