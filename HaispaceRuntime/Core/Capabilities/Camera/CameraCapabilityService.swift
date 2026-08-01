@@ -26,7 +26,7 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
     private init() {}
     
     public func prepare(configuration: CameraConfiguration) async throws {
-        RuntimeTimelineLogger.shared.logEvent("CAMERA PREPARE", payload: "FPS: \(configuration.frameRate)")
+        await RuntimeTimelineLogger.shared.logEvent("CAMERA PREPARE", payload: "FPS: \(configuration.frameRate)")
         
         try await controller.configure(frameRate: configuration.frameRate)
         try await previewPipeline.attach(to: controller.captureSession)
