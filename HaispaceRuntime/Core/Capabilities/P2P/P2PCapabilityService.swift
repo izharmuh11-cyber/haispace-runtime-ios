@@ -29,7 +29,7 @@ public actor P2PCapabilityService: P2PCapabilityProtocol {
     public func startSession(sessionId: SessionID) async throws -> P2PPeerInfo {
         await RuntimeTimelineLogger.shared.logEvent("P2P SESSION START", payload: sessionId.rawValue)
         // Wait for peer in real life. We return dummy info for now.
-        return P2PPeerInfo(deviceId: "mock-peer", deviceName: "iPhone Camera", role: "iPhoneCamera", activeTransport: .multipeer)
+        return P2PPeerInfo(deviceId: "mock-peer", deviceName: "iPhone Camera", role: "iPhoneCamera", activeTransport: .multipeerConnectivity)
     }
     
     public func stopSession() async {
