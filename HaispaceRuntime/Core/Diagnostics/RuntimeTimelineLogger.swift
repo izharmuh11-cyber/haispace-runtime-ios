@@ -45,5 +45,8 @@ public final class RuntimeTimelineLogger {
         // Print to console and OSLog
         print(event.displayString)
         logger.info("\(event.displayString)")
+        
+        // Simpan juga ke file log agar bisa diupload ke R2
+        HaispaceLogger.info(event.displayString, category: "timeline")
     }
 }
