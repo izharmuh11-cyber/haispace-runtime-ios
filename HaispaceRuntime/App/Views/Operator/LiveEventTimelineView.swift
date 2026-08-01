@@ -73,60 +73,52 @@ struct LiveEventTimelineView: View {
         )
     }
     
-    private func activeEvents() -> [AuditEvent] {
-        guard let sessionId = appState.currentSession?.sessionId,
-              let record = SessionAuditTrail.read(sessionId: sessionId) else {
-            return []
-        }
-        return record.events
+    private func activeEvents() -> [RuntimeTimelineEvent] {
+        return RuntimeTimelineLogger.shared.events
     }
 }
 
 // MARK: - EventRowView
 
-private struct EventRowView: View {
-    let event: AuditEvent
+struct EventRowView: View {
+    let event: RuntimeTimelineEvent
     
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            Text(timeString(event.timestamp))
-                .font(.caption2.monospacedDigit())
-                .foregroundColor(.gray)
-            
-            statusIcon(for: event.eventType)
-                .font(.caption2)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(event.eventType.rawValue)
-                    .font(.caption)
-                    .foregroundColor(.white)
+            // Timeline Node
+            VStack(spacing: 0) {
+                Circle()
+                    .fill(Color.blue)
+                    .frame(width: 8, height: 8)
+                    .padding(.top, 4)
                 
-                if let details = event.metadata["details"] {
-                    Text(details)
+                Rectangle()
+                    .fill(Color.white.opacity(0.2))
+                    .frame(width: 1)
+            }
+            
+            // Content
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .top) {
+                    Text(event.type)
+                        .font(.caption.bold())
+                        .foregroundColor(.white)
+                    
+                    Spacer()
+                    
+                    Text(event.timestamp, style: .time)
                         .font(.caption2)
-                        .foregroundColor(.red)
+                        .foregroundColor(.gray)
+                }
+                
+                if let payload = event.payload {
+                    Text(payload)
+                        .font(.caption2.monospaced())
+                        .foregroundColor(.white.opacity(0.8))
+                        .lineLimit(2)
                 }
             }
         }
-    }
-    
-    private func timeString(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        return formatter.string(from: date)
-    }
-    
-    @ViewBuilder
-    private func statusIcon(for type: AuditEventType) -> some View {
-        switch type {
-        case .cameraFailure, .paymentTimeout, .paymentFailed, .deliveryFailure, .uploadFailure:
-            Image(systemName: "xmark.circle.fill").foregroundColor(.red)
-        case .sessionStarted, .photoCaptured, .paymentConfirmed, .deliveryCompleted, .sessionCompleted:
-            Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
-        case .operatorCancel, .operatorRetry, .operatorReset:
-            Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.yellow)
-        default:
-            Image(systemName: "circle.fill").foregroundColor(.gray)
-        }
+        .padding(.vertical, 2)
     }
 }
