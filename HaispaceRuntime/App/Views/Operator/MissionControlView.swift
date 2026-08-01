@@ -23,10 +23,13 @@ public struct MissionControlView: View {
     @State private var showingDiagnostics = false
 
     enum Tab: String, CaseIterable {
-        case incidents = "Insiden"
-        case diagnosis = "Diagnosis"
-        case health    = "Kesehatan"
-        case kpis      = "KPI"
+        case incidents     = "Insiden"
+        case diagnosis     = "Diagnosis"
+        case health        = "Kesehatan"
+        case kpis          = "KPI"
+        #if DEBUG
+        case qualification = "Kualifikasi"
+        #endif
     }
 
     public var body: some View {
@@ -163,6 +166,10 @@ public struct MissionControlView: View {
             HealthOverviewView(snapshot: vm.snapshot.platformHealth)
         case .kpis:
             KPIDashboardView(kpis: vm.snapshot.kpis, auditSummary: vm.snapshot.auditSummary)
+        #if DEBUG
+        case .qualification:
+            QualificationDashboardView()
+        #endif
         }
     }
 
