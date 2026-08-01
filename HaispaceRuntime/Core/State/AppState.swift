@@ -109,6 +109,15 @@ final class AppState {
     /// Satu-satunya cara yang benar untuk mengubah workflow dari View.
     /// AppState meneruskan ke Runtime — tidak membuat keputusan sendiri.
     func send(_ intent: WorkflowIntent) async throws {
+        // [COMPATIBILITY BRIDGE]
+        // Karena ActiveSessionView masih mengandalkan SessionStore (Legacy) dan belum dimigrasi (PR-13),
+        // kita perlu mensinkronisasi WorkflowOrchestrator dengan penciptaan SessionStore.
+        if case .selectPackage(let packageId) = intent {
+            let pkg = boothConfig.activePackages.first(where: { $0.id == packageId }) ?? .mockStandard
+            let guest = pendingGuest ?? GuestInfo(name: "Guest", instagram: nil, phoneNumber: nil, queueNumber: 1)
+            startNewSession(package: pkg, guest: guest)
+        }
+
         try await runtime.orchestrator.handleIntent(intent)
         let newStage = await runtime.orchestrator.currentStage
         currentRoute = WorkflowRouteMapper.route(for: newStage)
