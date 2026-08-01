@@ -22,10 +22,10 @@ public actor BootstrapEngineActor {
 public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
     @Published public private(set) var currentState: BootstrapState = .pending
     
-    public let capabilityManager: CapabilityManager
+    public let capabilityManager: SystemCapabilityState
     private let api = BootstrapAPI.shared
     
-    public init(capabilityManager: CapabilityManager) {
+    public init(capabilityManager: SystemCapabilityState) {
         self.capabilityManager = capabilityManager
     }
     

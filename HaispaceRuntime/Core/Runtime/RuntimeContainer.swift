@@ -41,7 +41,7 @@ public final class RuntimeContainer: ObservableObject {
     public let infrastructure: InfrastructureModule
     public let observability: ObservabilityModule
     
-    public let capabilityManager: CapabilityManager
+    public let capabilityManager: SystemCapabilityState
     public let bootstrapEngine: BootstrapEngine
 
     // MARK: - Build Configurations
@@ -89,7 +89,7 @@ public final class RuntimeContainer: ObservableObject {
         self.observability = observability
 
         // Initialize M-005 capability and bootstrap components
-        self.capabilityManager = CapabilityManager()
+        self.capabilityManager = SystemCapabilityState()
         self.bootstrapEngine = BootstrapEngine(capabilityManager: self.capabilityManager)
 
         // Build WorkflowOrchestrator dengan dependencies dari modules
