@@ -181,7 +181,7 @@ public enum SessionSnapshotStore {
                 guard let data = try? Data(contentsOf: url) else { return nil }
                 return try? decoder.decode(SessionSnapshot.self, from: data)
             }
-            .sorted(by: { $0.sessionStartedAt < $1.sessionStartedAt })
+            .sorted(by: { $0.startedAt < $1.startedAt })
     }
 
     // MARK: - Private
