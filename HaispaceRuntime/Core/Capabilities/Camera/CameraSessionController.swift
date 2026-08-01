@@ -14,6 +14,11 @@ public actor CameraSessionController {
     
     public init() {}
     
+    public nonisolated func activeSensorResolution() -> CMVideoDimensions? {
+        guard let input = captureSession.inputs.first as? AVCaptureDeviceInput else { return nil }
+        return CMVideoFormatDescriptionGetDimensions(input.device.activeFormat.formatDescription)
+    }
+    
     public func configure(frameRate: Int) throws {
         guard !isConfigured else { return }
         

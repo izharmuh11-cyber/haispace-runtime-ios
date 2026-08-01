@@ -32,9 +32,15 @@ public actor CapturePipeline: NSObject, AVCapturePhotoCaptureDelegate {
             
             // Fire capture
             Task {
+                // Phase 4: Sync orientation before capture
+                let orientation = await CameraOrientationCoordinator.shared.currentVideoOrientation()
+                if let connection = self.photoOutput.connection(with: .video) {
+                    connection.videoOrientation = orientation
+                }
+                
                 await RuntimeTimelineLogger.shared.logEvent("[2] AVCapturePhotoOutput.capturePhoto()")
+                self.photoOutput.capturePhoto(with: settings, delegate: self)
             }
-            photoOutput.capturePhoto(with: settings, delegate: self)
         }
     }
     
@@ -79,7 +85,24 @@ public actor CapturePipeline: NSObject, AVCapturePhotoCaptureDelegate {
             case .rightMirrored: orientationStr = "Right Mirrored"
             @unknown default: orientationStr = "Unknown"
             }
-            await RuntimeTimelineLogger.shared.logEvent("EXIF DIAGNOSTIC", payload: "Image Orientation: \(orientationStr)")
+            
+            let aspectStr = image.size.height > 0 ? String(format: "%.2f", image.size.width / image.size.height) : "Unknown"
+            let pixelWidth = image.cgImage?.width ?? Int(image.size.width)
+            let pixelHeight = image.cgImage?.height ?? Int(image.size.height)
+            
+            let log = """
+            =========================
+            CAPTURE RESULT
+            =========================
+            Image Width  : \(pixelWidth)
+            Image Height : \(pixelHeight)
+            
+            UIImage Size : \(Int(image.size.width)) x \(Int(image.size.height))
+            Aspect Ratio : \(aspectStr)
+            
+            EXIF Orientation: \(orientationStr)
+            """
+            await RuntimeTimelineLogger.shared.logEvent("CAPTURE_RESULT", payload: log)
         }
         
         // Save to temporary local storage

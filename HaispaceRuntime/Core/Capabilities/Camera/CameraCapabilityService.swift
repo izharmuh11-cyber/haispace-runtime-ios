@@ -19,6 +19,10 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
         controller.captureSession
     }
     
+    public var activeSensorResolution: CMVideoDimensions? {
+        controller.activeSensorResolution()
+    }
+    
     private var health = CameraHealth(status: .unavailable, fps: 0, isConnected: false)
     private var metrics = CameraMetrics(totalCaptures: 0)
     

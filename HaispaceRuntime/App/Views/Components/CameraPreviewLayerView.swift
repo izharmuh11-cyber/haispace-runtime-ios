@@ -58,23 +58,17 @@ public struct CameraPreviewLayerView: UIViewRepresentable {
             let deviceOrientation = UIDevice.current.orientation
             let interfaceOrientation = window?.windowScene?.interfaceOrientation ?? .unknown
             
-            let newVideoOrientation: AVCaptureVideoOrientation
-            
-            switch interfaceOrientation {
-            case .portrait: newVideoOrientation = .portrait
-            case .portraitUpsideDown: newVideoOrientation = .portraitUpsideDown
-            case .landscapeLeft: newVideoOrientation = .landscapeLeft
-            case .landscapeRight: newVideoOrientation = .landscapeRight
-            default: newVideoOrientation = .landscapeRight
-            }
+            // Phase 4: Use Coordinator for single source of truth
+            let newVideoOrientation = CameraOrientationCoordinator.shared.currentVideoOrientation()
+            let coordStr = CameraOrientationCoordinator.shared.currentVideoOrientationString()
             
             if connection.videoOrientation != newVideoOrientation {
                 connection.videoOrientation = newVideoOrientation
-                printRotationDiagnostic(device: deviceOrientation, interface: interfaceOrientation, connection: newVideoOrientation)
+                printRotationDiagnostic(device: deviceOrientation, interface: interfaceOrientation, connection: newVideoOrientation, coordStr: coordStr)
             }
         }
         
-        private func printRotationDiagnostic(device: UIDeviceOrientation, interface: UIInterfaceOrientation, connection: AVCaptureVideoOrientation) {
+        private func printRotationDiagnostic(device: UIDeviceOrientation, interface: UIInterfaceOrientation, connection: AVCaptureVideoOrientation, coordStr: String) {
             let deviceStr: String
             switch device {
             case .landscapeLeft: deviceStr = "Landscape Left"
@@ -110,8 +104,9 @@ public struct CameraPreviewLayerView: UIViewRepresentable {
             =========================
             [1] Device: \(deviceStr)
             [2] UIWindowScene: \(interfaceStr)
-            [3] AVCaptureConnection: \(connStr)
-            [4] PreviewLayer Bounds: \(boundsStr)
+            [3] Coordinator: \(coordStr)
+            [4] AVCaptureConnection: \(connStr)
+            [5] PreviewLayer Bounds: \(boundsStr)
             """
             
             RuntimeTimelineLogger.shared.logEvent("ROTATION_DIAGNOSTIC", payload: log)

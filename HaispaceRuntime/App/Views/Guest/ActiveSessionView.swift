@@ -416,6 +416,44 @@ struct ActiveSessionView: View {
                             showPoseHint = false
                         }
                 )
+                .onAppear {
+                    logCameraGeometry(geometry: geometry)
+                }
+    }
+    
+    private func logCameraGeometry(geometry: GeometryProxy) {
+        let safeArea = geometry.safeAreaInsets
+        let size = geometry.size
+        
+        let resolution = CameraCapabilityService.shared.activeSensorResolution
+        let resStr = resolution != nil ? "\(resolution!.width) x \(resolution!.height)" : "Unknown"
+        
+        var sensorAspectStr = "Unknown"
+        if let res = resolution, res.height > 0 {
+            let aspect = Double(res.width) / Double(res.height)
+            sensorAspectStr = String(format: "%.2f", aspect)
+        }
+        
+        let previewAspectStr = size.height > 0 ? String(format: "%.2f", size.width / size.height) : "Unknown"
+        
+        let log = """
+        =========================
+        CAMERA GEOMETRY
+        =========================
+        Preview Layer Frame : \(Int(size.width)) x \(Int(size.height))
+        
+        Video Gravity       : resizeAspectFill
+        Capture Resolution  : \(resStr)
+        
+        Sensor Aspect Ratio : \(sensorAspectStr)
+        Preview Aspect Ratio: \(previewAspectStr)
+        
+        Safe Area           : top \(Int(safeArea.top)) bottom \(Int(safeArea.bottom)) left \(Int(safeArea.leading)) right \(Int(safeArea.trailing))
+        """
+        
+        Task {
+            await RuntimeTimelineLogger.shared.logEvent("CAMERA GEOMETRY", payload: log)
+        }
     }
     
     @ViewBuilder
