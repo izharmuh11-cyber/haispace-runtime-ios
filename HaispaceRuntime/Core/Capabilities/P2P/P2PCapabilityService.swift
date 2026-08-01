@@ -1,0 +1,48 @@
+// P2PCapabilityService.swift
+// HaispaceRuntime — Core/Capabilities/P2P
+
+import Foundation
+
+public actor P2PCapabilityService: P2PCapabilityProtocol {
+    public static let shared = P2PCapabilityService()
+    
+    private let controller = P2PSessionController()
+    
+    private var health = P2PHealth(status: .healthy, isNetworkConnected: true, isPeerPaired: false)
+    private var metrics = P2PMetrics()
+    
+    public var healthSnapshot: P2PHealth {
+        get { return health }
+    }
+    
+    public var metricsSnapshot: P2PMetrics {
+        get { return metrics }
+    }
+    
+    private init() {}
+    
+    public func prepare(configuration: P2PConfiguration) async throws {
+        RuntimeTimelineLogger.shared.logEvent("P2P PREPARE", payload: "Configured")
+        await controller.startAdvertising()
+    }
+    
+    public func startSession(sessionId: SessionID) async throws -> P2PPeerInfo {
+        RuntimeTimelineLogger.shared.logEvent("P2P SESSION START", payload: sessionId.rawValue)
+        // Wait for peer in real life. We return dummy info for now.
+        return P2PPeerInfo(peerId: "mock-peer", deviceName: "iPhone Camera", osVersion: "iOS 18")
+    }
+    
+    public func stopSession() async {
+        RuntimeTimelineLogger.shared.logEvent("P2P SESSION STOP")
+        await controller.stopAdvertising()
+    }
+    
+    public func requestTransfer(transferId: TransferID, payloadPath: String) async throws -> P2PTransferResult {
+        RuntimeTimelineLogger.shared.logEvent("P2P TRANSFER REQ", payload: payloadPath)
+        return P2PTransferResult(transferId: transferId, status: .completed, bytesTransferred: 1024, durationMs: 50)
+    }
+    
+    public func requestResume(transferId: TransferID, fromChunkIndex: UInt32) async throws -> P2PTransferResult {
+        return P2PTransferResult(transferId: transferId, status: .completed, bytesTransferred: 1024, durationMs: 50)
+    }
+}

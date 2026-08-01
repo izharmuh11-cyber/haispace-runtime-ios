@@ -20,6 +20,7 @@ public struct MissionControlView: View {
     @State private var selectedTab: Tab = .incidents
     @State private var isUploadingLog = false
     @State private var uploadLogToast: String?
+    @State private var showingDiagnostics = false
 
     enum Tab: String, CaseIterable {
         case incidents = "Insiden"
@@ -86,6 +87,9 @@ public struct MissionControlView: View {
                             }
                         }
                 }
+            }
+            .sheet(isPresented: $showingDiagnostics) {
+                HardwareDiagnosticsPanel()
             }
         }
     }
@@ -177,6 +181,13 @@ public struct MissionControlView: View {
                         .fontWeight(.bold)
                 }
                 .foregroundStyle(.red)
+            }
+        }
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                showingDiagnostics = true
+            } label: {
+                Label("Hardware Diagnostics", systemImage: "cpu")
             }
         }
         ToolbarItem(placement: .topBarTrailing) {
