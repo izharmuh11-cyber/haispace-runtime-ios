@@ -122,7 +122,10 @@ final class AppState {
     func setup() async {
         HaispaceLogger.info("AppState setup dimulai", category: "app")
 
-        // 0. Runtime launch recovery — cek apakah ada session in-progress di disk
+        // 0. M-005: Platform Awakening — Runtime Bootstrap
+        await runtime.bootstrapEngine.startBootstrapSequence()
+
+        // 1. Runtime launch recovery — cek apakah ada session in-progress di disk
         await runtime.performLaunchRecovery()
 
         // 1. Orphaned session detection (Legacy — akan digantikan Recovery Engine Phase C)

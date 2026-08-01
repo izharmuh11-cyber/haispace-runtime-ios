@@ -41,7 +41,8 @@ public final class RuntimeContainer: ObservableObject {
     public let infrastructure: InfrastructureModule
     public let observability: ObservabilityModule
     
-    // Nanti CapabilityManager akan di-expose di sini (Milestone 3)
+    public let capabilityManager: CapabilityManager
+    public let bootstrapEngine: BootstrapEngine
 
     // MARK: - Build Configurations
 
@@ -86,6 +87,10 @@ public final class RuntimeContainer: ObservableObject {
         self.capabilities = capabilities
         self.infrastructure = infrastructure
         self.observability = observability
+
+        // Initialize M-005 capability and bootstrap components
+        self.capabilityManager = CapabilityManager()
+        self.bootstrapEngine = BootstrapEngine(capabilityManager: self.capabilityManager)
 
         // Build WorkflowOrchestrator dengan dependencies dari modules
         // NOTE: Di Milestone 3, ini akan menggunakan CapabilityManager
