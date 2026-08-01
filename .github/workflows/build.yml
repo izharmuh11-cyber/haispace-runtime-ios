@@ -39,19 +39,21 @@ jobs:
 
       - name: "🔨 Build for Simulator"
         run: |
+          # List available simulators for debugging
+          xcrun simctl list devicetypes | grep iPad | head -5
+
           xcodebuild build \
             -project HaispaceRuntime.xcodeproj \
             -scheme HaispaceRuntime \
-            -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4),OS=latest' \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
-            -parallelizeTargets \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             HSP_API_BASE_URL="https://api.haispaceproject.my.id" \
             HSP_MIDTRANS_CLIENT_KEY="ci-placeholder" \
             HSP_LICENSE_KEY="ci-placeholder" \
-            2>&1 | grep -E "(error:|warning:|Build succeeded|Build FAILED|Compiling)" | tail -50
+            2>&1 | grep -E "(error:|warning: |Build succeeded|Build FAILED|Compiling |Linking )
 
       - name: "✅ Report Build Status"
         if: success()
