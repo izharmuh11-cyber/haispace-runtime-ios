@@ -18,12 +18,7 @@ public struct CapabilityState: Codable, Sendable {
     public var storage: CapabilityStatus = .unknown
 }
 
-@globalActor
-public actor SystemCapabilityStateActor {
-    public static let shared = SystemCapabilityStateActor()
-}
-
-@SystemCapabilityStateActor
+@MainActor
 public final class SystemCapabilityState: ObservableObject, @unchecked Sendable {
     @Published public private(set) var state = CapabilityState()
     

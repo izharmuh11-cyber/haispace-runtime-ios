@@ -13,12 +13,7 @@ public enum BootstrapState: String, Sendable {
     case error
 }
 
-@globalActor
-public actor BootstrapEngineActor {
-    public static let shared = BootstrapEngineActor()
-}
-
-@BootstrapEngineActor
+@MainActor
 public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
     @Published public private(set) var currentState: BootstrapState = .pending
     
