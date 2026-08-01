@@ -13,21 +13,21 @@ import Foundation
 /// Paket foto yang ditawarkan kepada tamu.
 /// Harga dalam Rupiah (Integer, bukan Double — menghindari floating point issues).
 public struct BoothPackage: Codable, Equatable, Identifiable {
-    let id: String
-    let name: String            // Contoh: "The Stage", "The Mini", "The VIP"
-    let price: Int              // Dalam Rupiah, contoh: 50000
-    let durationSeconds: Int    // Total durasi sesi foto, contoh: 300 (5 menit)
-    let maxPhotoCount: Int      // Jumlah maksimal foto yang bisa diambil dalam sesi
-    let minPhotoCount: Int      // Jumlah minimum foto yang harus dipilih tamu
-    let intervalSeconds: Int    // Jeda antar jepretan otomatis, contoh: 8
-    let description: String     // Deskripsi singkat untuk tamu
-    let isPopular: Bool         // Apakah ini paket yang paling sering dipilih?
+    public let id: String
+    public let name: String            // Contoh: "The Stage", "The Mini", "The VIP"
+    public let price: Int              // Dalam Rupiah, contoh: 50000
+    public let durationSeconds: Int    // Total durasi sesi foto, contoh: 300 (5 menit)
+    public let maxPhotoCount: Int      // Jumlah maksimal foto yang bisa diambil dalam sesi
+    public let minPhotoCount: Int      // Jumlah minimum foto yang harus dipilih tamu
+    public let intervalSeconds: Int    // Jeda antar jepretan otomatis, contoh: 8
+    public let description: String     // Deskripsi singkat untuk tamu
+    public let isPopular: Bool         // Apakah ini paket yang paling sering dipilih?
 
     // Add-ons yang termasuk dalam paket ini (opsional)
-    let includedAddonIds: [String]
+    public let includedAddonIds: [String]
 
     // Computed
-    var formattedPrice: String {
+    public var formattedPrice: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = "IDR"
@@ -36,7 +36,7 @@ public struct BoothPackage: Codable, Equatable, Identifiable {
         return formatter.string(from: NSNumber(value: price)) ?? "Rp \(price)"
     }
 
-    var formattedDuration: String {
+    public var formattedDuration: String {
         let minutes = durationSeconds / 60
         let seconds = durationSeconds % 60
         if seconds == 0 {

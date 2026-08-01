@@ -48,22 +48,7 @@ final class AppState {
     let boothConfig = BoothConfigStore()
     let operatorState = OperatorStore()
 
-    // MARK: - Navigation State
 
-    enum KioskRoute: Hashable {
-        case landing
-        case guestRegistration
-        case packageSelection
-        case activeSession
-        case photoSelection
-        case frameSelection
-        case payment
-        case processing
-        case delivery
-    }
-
-    /// Route saat ini. TIDAK boleh di-set langsung dari View.
-    private(set) var currentRoute: KioskRoute = .landing
 
     // MARK: - Pending Guest (UI-level transient state)
 

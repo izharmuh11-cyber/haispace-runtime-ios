@@ -13,23 +13,23 @@ import Foundation
 /// Informasi identitas tamu yang mendaftar di kiosk iPad.
 /// Data ini tidak sensitif — hanya nama dan Instagram/nomor HP untuk pengiriman foto.
 public struct GuestInfo: Codable, Equatable {
-    let name: String
-    let instagram: String?      // Opsional — untuk tag foto di social media
-    let phoneNumber: String?    // Opsional — untuk kirim download link via WA
-    let queueNumber: Int        // Nomor antrian yang ditampilkan di SmartQueue PWA
+    public let name: String
+    public let instagram: String?      // Opsional — untuk tag foto di social media
+    public let phoneNumber: String?    // Opsional — untuk kirim download link via WA
+    public let queueNumber: Int        // Nomor antrian yang ditampilkan di SmartQueue PWA
 
     /// Validasi: minimal nama harus diisi
-    var isValid: Bool {
+    public var isValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     /// Display name yang bersih (trimmed)
-    var displayName: String {
+    public var displayName: String {
         name.trimmingCharacters(in: .whitespaces)
     }
 
     /// Instagram handle tanpa @ (untuk display)
-    var instagramHandle: String? {
+    public var instagramHandle: String? {
         guard let ig = instagram, !ig.isEmpty else { return nil }
         return ig.hasPrefix("@") ? String(ig.dropFirst()) : ig
     }
