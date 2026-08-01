@@ -140,8 +140,10 @@ public actor HaispaceSession {
     // MARK: - Immutable Identity (locked on creation)
     public let identity: SessionIdentity
     public let capturePolicy: CapturePolicy
+    
+    public var sessionId: String { identity.sessionId }
 
-    // MARK: - Mutable Domain State
+    // MARK: - Mutable State (Domain Logic Only)
     private(set) var lifecycleStatus: SessionLifecycleStatus = .active
     private(set) var currentStage: WorkflowStage = .packageSelection
     private(set) var captures: CaptureCollection = CaptureCollection()
@@ -171,6 +173,14 @@ public actor HaispaceSession {
 
     public var canProceedToPayment: Bool {
         captures.selectedCount >= capturePolicy.minSelectionCount
+    }
+
+    public var isFinanciallyCommitted: Bool {
+        guard let payment = paymentCommitment else { return false }
+        switch payment {
+        case .accepted, .verified: return true
+        default: return false
+        }
     }
 
     public var canBeginDelivery: Bool {
