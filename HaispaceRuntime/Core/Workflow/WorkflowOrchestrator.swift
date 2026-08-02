@@ -500,9 +500,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 guard !Task.isCancelled else { break }
                 switch event {
                 case .tick(let remaining):
-                    await MainActor.run {
-                        self.sessionTimerRemaining = remaining
-                    }
+                    await self.updateSessionTimerRemaining(remaining)
                 case .finished:
                     HaispaceLogger.info("[M-011.5] Session timer finished", category: "timer")
                     // Orchestrator memutuskan apa yang terjadi saat timer habis.
@@ -518,6 +516,10 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
         }
         
         HaispaceLogger.info("[M-011.5] Session countdown started: \(duration)s", category: "timer")
+    }
+    
+    private func updateSessionTimerRemaining(_ remaining: Int) {
+        self.sessionTimerRemaining = remaining
     }
     
     /// Hentikan session timer.
