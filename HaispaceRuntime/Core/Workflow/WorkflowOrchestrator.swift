@@ -38,6 +38,12 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
     // Health Monitor
     private var health: WorkflowHealth = WorkflowHealth()
     
+    // M-011 STEP 1: Photo Input Listener Lifecycle
+    // Orchestrator hanya start/stop — tidak pernah memproses foto.
+    // Foto mengalir: P2P → PhotoEvent → CapturedPhotoStore
+    private var photoInputListenerTask: Task<Void, Never>?
+    private var photoFullQualityListenerTask: Task<Void, Never>?
+
     public var healthSnapshot: WorkflowHealth {
         return WorkflowHealth(
             currentStage: self.currentStage,
@@ -112,6 +118,9 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             // Prepare Camera Capabilities right away for photo capture
             try await camera.prepare(configuration: CameraConfiguration())
             try await camera.startSession(sessionId: sessionId)
+            
+            // M-011 STEP 1: Start Photo Input listening
+            startPhotoInputListening()
 
             SessionAuditTrail.append(
                 sessionId: sessionId.rawValue,
@@ -336,6 +345,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 )
                 SessionAuditTrail.close(sessionId: sessionId.rawValue, status: .completed)
             }
+            stopPhotoInputListening() // M-011 STEP 1
             await resetToLanding()
             
         case .cancelSessionByOperator:
@@ -346,10 +356,11 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                     eventType: .operatorCancel
                 )
                 let finalStatus: AuditTrailFooter.FinalStatus = hasFinancialTransaction
-                    ? .completed  // payment pernah confirmed — tidak di-abandon
+                    ? .completed
                     : .cancelledByOperator
                 SessionAuditTrail.close(sessionId: sessionId.rawValue, status: finalStatus)
             }
+            stopPhotoInputListening() // M-011 STEP 1
             await resetToLanding()
             
         case .testCameraCapture:
@@ -367,6 +378,63 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             // I'll just use PrinterCapabilityService.shared for this isolated diagnostic intent for now.
             try? await PrinterCapabilityService.shared.sendTestPage()
         }
+    }
+    
+    // MARK: - Photo Input Lifecycle (M-011 STEP 1)
+    
+    /// Mulai mendengarkan aliran foto dari transport saat ini (P2P).
+    /// Orchestrator tidak memproses foto — hanya start dan stop lifecycle.
+    /// Foto mengalir: P2PMessageRouter → PhotoEvent → CapturedPhotoStore
+    private func startPhotoInputListening() {
+        stopPhotoInputListening() // Cancel sebelumnya jika ada
+        
+        photoInputListenerTask = Task { [weak self] in
+            guard self != nil else { return }
+            for await message in await P2PMessageRouter.shared.messageStream(for: .photoPreview) {
+                guard !Task.isCancelled else { break }
+                guard case .photoPreview(let id, let thumbnailData) = message else { continue }
+                await MainActor.run {
+                    CapturedPhotoStore.shared.receivePhotoEvent(
+                        .thumbnailArrived(
+                            photoId: id,
+                            data: thumbnailData,
+                            capturedAt: Date(),
+                            sortOrder: CapturedPhotoStore.shared.capturedPhotos.count
+                        )
+                    )
+                }
+                Task { @MainActor in
+                    RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
+                }
+            }
+        }
+        
+        photoFullQualityListenerTask = Task { [weak self] in
+            guard self != nil else { return }
+            for await message in await P2PMessageRouter.shared.messageStream(for: .photoFull) {
+                guard !Task.isCancelled else { break }
+                guard case .photoFull(let id, let fullData) = message else { continue }
+                await MainActor.run {
+                    CapturedPhotoStore.shared.receivePhotoEvent(
+                        .fullQualityArrived(photoId: id, fullData: fullData)
+                    )
+                }
+                // Send ACK back to iPhone
+                let checksum = String(fullData.count)
+                await P2PMessageRouter.shared.route(.photoAck(photoId: id, checksum: checksum))
+            }
+        }
+        
+        HaispaceLogger.info("[M-011] Photo Input listening started", category: "workflow")
+    }
+    
+    /// Hentikan semua task listener foto.
+    private func stopPhotoInputListening() {
+        photoInputListenerTask?.cancel()
+        photoInputListenerTask = nil
+        photoFullQualityListenerTask?.cancel()
+        photoFullQualityListenerTask = nil
+        HaispaceLogger.info("[M-011] Photo Input listening stopped", category: "workflow")
     }
     
     // MARK: - Generic Event Bus Handler (Event-to-Command Table)

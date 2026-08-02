@@ -73,8 +73,8 @@ final class SessionStore {
     // MARK: Internal — Timer Task (private untuk mencegah misuse)
     private var sessionTimerTask: Task<Void, Never>?
     private var captureTimerTask: Task<Void, Never>?
-    private var previewListenerTask: Task<Void, Never>?
-    private var fullPhotoListenerTask: Task<Void, Never>?
+    // M-011 STEP 1: previewListenerTask & fullPhotoListenerTask dipindahkan ke WorkflowOrchestrator.
+    // SessionStore tidak lagi tahu tentang P2P. Foto mengalir via PhotoEvent → CapturedPhotoStore.
 
     // MARK: Computed
 
@@ -146,10 +146,6 @@ final class SessionStore {
         sessionTimerTask = nil
         captureTimerTask?.cancel()
         captureTimerTask = nil
-        previewListenerTask?.cancel()
-        previewListenerTask = nil
-        fullPhotoListenerTask?.cancel()
-        fullPhotoListenerTask = nil
         status = .photoSelection
         HaispaceLogger.info("Masuk ke photo selection — \(photos.capturedCount) foto", category: "session")
     }
@@ -176,10 +172,6 @@ final class SessionStore {
         sessionTimerTask = nil
         captureTimerTask?.cancel()
         captureTimerTask = nil
-        previewListenerTask?.cancel()
-        previewListenerTask = nil
-        fullPhotoListenerTask?.cancel()
-        fullPhotoListenerTask = nil
         status = .completed
         HaispaceLogger.info("Sesi selesai: \(sessionId)", category: "session")
 
@@ -196,10 +188,6 @@ final class SessionStore {
         sessionTimerTask = nil
         captureTimerTask?.cancel()
         captureTimerTask = nil
-        previewListenerTask?.cancel()
-        previewListenerTask = nil
-        fullPhotoListenerTask?.cancel()
-        fullPhotoListenerTask = nil
         photos.reset()
         payment.reset()
         delivery.reset()
@@ -216,45 +204,9 @@ final class SessionStore {
     }
 
     // MARK: - Private: Session Timer
-
+    // M-011 STEP 1: startSessionTimer tidak lagi mengandung P2P listener.
+    // P2P photo stream sekarang dikelola oleh WorkflowOrchestrator.
     private func startSessionTimer() {
-        previewListenerTask?.cancel()
-        fullPhotoListenerTask?.cancel()
-        
-        previewListenerTask = Task { [weak self] in
-            for await message in await P2PMessageRouter.shared.messageStream(for: .photoPreview) {
-                guard !Task.isCancelled else { break }
-                guard let self else { break }
-                guard case .photoPreview(let id, let thumbnailData) = message else { continue }
-                await MainActor.run {
-                    let sortOrder: Int
-                    if let existing = self.photos.capturedPhotos.first(where: { $0.id == id }) {
-                        sortOrder = existing.sortOrder
-                    } else {
-                        sortOrder = self.photos.capturedCount
-                    }
-                    let thumbnail = PhotoThumbnail(photoId: id, data: thumbnailData, capturedAt: Date(), sortOrder: sortOrder)
-                    self.photos.receiveThumbnail(thumbnail)
-                }
-            }
-        }
-        
-        fullPhotoListenerTask = Task { [weak self] in
-            for await message in await P2PMessageRouter.shared.messageStream(for: .photoFull) {
-                guard !Task.isCancelled else { break }
-                guard let self else { break }
-                guard case .photoFull(let id, let fullData) = message else { continue }
-                await MainActor.run {
-                    self.photos.upgradeToFullQuality(photoId: id, fullData: fullData)
-                    // Kirim ACK kembali ke iPhone dengan checksum dari ukuran data
-                    let checksum = String(fullData.count)
-                    Task {
-                        await P2PMessageRouter.shared.route(.photoAck(photoId: id, checksum: checksum))
-                    }
-                }
-            }
-        }
-        
         sessionTimerTask = Task { [weak self] in
             guard let self else { return }
 
