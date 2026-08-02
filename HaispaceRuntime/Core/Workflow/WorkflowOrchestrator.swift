@@ -139,7 +139,8 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             )
             self.currentStage = .capturing
             
-        case .selectTemplate(let frameId):\n            guard let sessionId = activeSessionId else { throw WorkflowError.sessionNotActive }
+        case .selectTemplate(let frameId):
+            guard let sessionId = activeSessionId else { throw WorkflowError.sessionNotActive }
 
             // M-012.5 ①: Orchestrator membaca dari store (tugasnya sebagai koordinator),
             // lalu membungkus dalam PhotoReference — EditingCapability tidak pernah menyentuh store.
@@ -147,7 +148,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             guard let firstPhoto = capturedPhotos.first else {
                 throw WorkflowError.sessionNotActive
             }
-            guard let sourcePath = firstPhoto.fullQualityPath ?? firstPhoto.thumbnailPath else {
+            guard let sourcePath = firstPhoto.writeToTempFile() else {
                 throw WorkflowError.sessionNotActive
             }
             
@@ -245,7 +246,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             // M-012.5 Audit: Gunakan PhotoReference — sama seperti selectTemplate
             let previewPhotos = await CapturedPhotoStore.shared.capturedPhotos
             if let firstPhoto = previewPhotos.first,
-               let previewPath = firstPhoto.fullQualityPath ?? firstPhoto.thumbnailPath {
+               let previewPath = firstPhoto.writeToTempFile() {
                 _ = try await editing.requestPreview(photoInput: previewPath, correlationId: correlationId)
             }
             
@@ -258,7 +259,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             // M-012.5 Audit: Gunakan PhotoReference — tidak ada lagi hardcoded path
             let exportPhotos = await CapturedPhotoStore.shared.capturedPhotos
             guard let firstPhoto = exportPhotos.first,
-                  let exportPhotoPath = firstPhoto.fullQualityPath ?? firstPhoto.thumbnailPath else {
+                  let exportPhotoPath = firstPhoto.writeToTempFile() else {
                 throw WorkflowError.sessionNotActive
             }
             let exportPhotoRef = PhotoReference(photoId: PhotoID(rawValue: firstPhoto.id), sourcePath: exportPhotoPath)
@@ -500,11 +501,8 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 switch event {
                 case .tick(let remaining):
                     await MainActor.run {
-                        // Sinkronisasi ke AppState melalui sessionTimerRemaining
-                        // View membaca ini \u2014 Timer tidak tahu siapa yang membaca
+                        self.sessionTimerRemaining = remaining
                     }
-                    self.sessionTimerRemaining = remaining
-                    
                 case .finished:
                     HaispaceLogger.info("[M-011.5] Session timer finished", category: "timer")
                     // Orchestrator memutuskan apa yang terjadi saat timer habis.
@@ -607,6 +605,24 @@ public enum WorkflowError: Error, LocalizedError, Equatable {
         switch self {
         case .sessionNotActive: return "Sesi workflow belum diinisialisasi."
         case .invalidTransition: return "Transisi stage workflow tidak valid."
+        }
+    }
+}
+
+// MARK: - Photo Helper
+
+extension CapturedPhoto {
+    /// Menulis Data foto ke disk sementara agar bisa dibaca oleh CoreImageEditingRuntime
+    func writeToTempFile() -> String? {
+        let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        let tempPhotoPath = cachesDir.appendingPathComponent("\(self.id)_temp.jpg")
+        
+        let data = self.fullQualityData ?? self.thumbnailData
+        do {
+            try data.write(to: tempPhotoPath)
+            return tempPhotoPath.path
+        } catch {
+            return nil
         }
     }
 }
