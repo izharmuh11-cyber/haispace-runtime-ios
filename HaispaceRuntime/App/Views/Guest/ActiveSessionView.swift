@@ -197,8 +197,7 @@ struct ActiveSessionView: View {
             // M-011 FINAL: SessionTimer via WorkflowOrchestrator
             // session?.start() dihapus. Orchestrator mengelola timer.
             Task {
-                let duration = appState.sessionContext.maxPhotoCount > 0 ?
-                    (appState.currentSession?.package_.durationSeconds ?? 300) : 300
+                let duration = appState.sessionContext.maxPhotoCount > 0 ? 300 : 300
                 await appState.runtime.orchestrator.startSessionCountdown(duration: duration)
             }
         }
@@ -331,8 +330,9 @@ struct ActiveSessionView: View {
                             if currentCount >= maxCount {
                                 RuntimeTimelineLogger.shared.logEvent("PHOTO SELECTION ROUTE ACTIVATED")
                                 // M-011 FINAL: Routing langsung ke photoSelection via AppState
-                                appState.currentRoute = .photoSelection
-                                appState.navigateTo(.photoSelection)
+                                Task { @MainActor in
+                                    appState.navigateTo(.photoSelection)
+                                }
                             }
                         } catch {
                             RuntimeTimelineLogger.shared.logEvent("CAPTURE ERROR: Data load failed - \(error.localizedDescription)")
@@ -1014,70 +1014,65 @@ struct ActiveSessionView: View {
             VStack {
                 HStack {
                     // Unified iOS 18 Style Dynamic Island Pill
-                    if let s = session {
-                        HStack(spacing: 18) {
-                            // Antrian
-                            // M-011 STEP 3B.1: Queue dari sessionContext, bukan SessionStore
-                            HStack(spacing: 6) {
-                                Image(systemName: "person.2.fill")
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(Color.cyan)
-                                Text("#\(String(format: "%03d", appState.sessionContext.queueNumber))")
-                                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                            }
-                            
-                            Divider()
-                                .frame(height: 14)
-                                .background(Color.white.opacity(0.3))
-                            
-                            // Timer Status — M-011 FINAL: Baca dari sessionContext.remainingSeconds
-                            HStack(spacing: 8) {
-                                Circle()
-                                    .fill(appState.sessionContext.remainingSeconds <= 30 ? Color.red : Color.green)
-                                    .frame(width: 8, height: 8)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(appState.sessionContext.remainingSeconds <= 30 ? Color.red : Color.green, lineWidth: 1.5)
-                                            .scaleEffect(isPulsing ? 2.2 : 1.0)
-                                            .opacity(isPulsing ? 0.0 : 1.0)
-                                    )
-                                    .onAppear {
-                                        withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: false)) {
-                                            isPulsing = true
-                                        }
-                                    }
-                                
-                                Text("\(formatTime(appState.sessionContext.remainingSeconds))")
-                                    .font(.system(size: 13, weight: .black, design: .rounded))
-                                    .foregroundStyle(s.remainingSeconds <= 30 ? Color.red : Color.white)
-                            }
-                            
-                            Divider()
-                                .frame(height: 14)
-                                .background(Color.white.opacity(0.3))
-                            
-                            // Quota — M-011 STEP 2: count dari CapturedPhotoStore
-                            HStack(spacing: 6) {
-                            // M-011 STEP 3B.1: maxPhotoCount dari sessionContext
-                            HStack(spacing: 6) {
-                                Image(systemName: "camera.fill")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(Color(hex: "#7C5CFC"))
-                                Text("\(CapturedPhotoStore.shared.capturedPhotos.count)/\(appState.sessionContext.maxPhotoCount)")
-                                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                            }
+                    HStack(spacing: 18) {
+                        // Antrian
+                        HStack(spacing: 6) {
+                            Image(systemName: "person.2.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Color.cyan)
+                            Text("#\(String(format: "%03d", appState.sessionContext.queueNumber))")
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(.ultraThinMaterial)
-                        .background(Color.black.opacity(0.6))
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(LinearGradient(colors: [.white.opacity(0.3), .white.opacity(0.08)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
-                        )
-                        .shadow(color: .black.opacity(0.45), radius: 16, y: 8)
+                        
+                        Divider()
+                            .frame(height: 14)
+                            .background(Color.white.opacity(0.3))
+                        
+                        // Timer Status — M-011 FINAL: Baca dari sessionContext.remainingSeconds
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(appState.sessionContext.remainingSeconds <= 30 ? Color.red : Color.green)
+                                .frame(width: 8, height: 8)
+                                .overlay(
+                                    Circle()
+                                        .stroke(appState.sessionContext.remainingSeconds <= 30 ? Color.red : Color.green, lineWidth: 1.5)
+                                        .scaleEffect(isPulsing ? 2.2 : 1.0)
+                                        .opacity(isPulsing ? 0.0 : 1.0)
+                                )
+                                .onAppear {
+                                    withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: false)) {
+                                        isPulsing = true
+                                    }
+                                }
+                            
+                            Text("\(formatTime(appState.sessionContext.remainingSeconds))")
+                                .font(.system(size: 13, weight: .black, design: .rounded))
+                                .foregroundStyle(appState.sessionContext.remainingSeconds <= 30 ? Color.red : Color.white)
+                        }
+                        
+                        Divider()
+                            .frame(height: 14)
+                            .background(Color.white.opacity(0.3))
+                        
+                        // Quota
+                        HStack(spacing: 6) {
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Color(hex: "#7C5CFC"))
+                            Text("\(CapturedPhotoStore.shared.capturedPhotos.count)/\(appState.sessionContext.maxPhotoCount)")
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial)
+                    .background(Color.black.opacity(0.6))
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(LinearGradient(colors: [.white.opacity(0.3), .white.opacity(0.08)], startPoint: .top, endPoint: .bottom), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.45), radius: 16, y: 8)
                 }
                 .padding(.top, 24)
                 
