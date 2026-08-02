@@ -177,7 +177,14 @@ public final class FrameEngineValidator: ObservableObject, @preconcurrency Capab
     ) async -> TemplateValidationResult {
         let startTime = Date()
         let correlationId = CorrelationID(rawValue: "template-\(layout.rawValue)-\(UUID().uuidString.prefix(6))")
-        let config = EditingConfiguration(jpegQuality: 0.9)
+        
+        // Sideload path: We expect the extracted folders to be in Documents/dummy_assets
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let folderName = getMockFolderName(for: layout)
+        let assetPath = documentsPath.appendingPathComponent("dummy_assets").appendingPathComponent(folderName).path
+        
+        let frameRef = FrameReference(frameId: "mock-\(layout.rawValue)", assetPath: assetPath)
+        let config = EditingConfiguration(frame: frameRef, jpegQuality: 0.9)
         
         do {
             let result = try await runtime.renderExport(
@@ -281,6 +288,15 @@ public enum TemplateLayout: String, CaseIterable {
         case .dual:   return "Dual Strip"
         case .quad:   return "Quad Grid"
         }
+    }
+}
+
+// Helper to map layout to mock folder name
+private func getMockFolderName(for layout: TemplateLayout) -> String {
+    switch layout {
+    case .single: return "mock-single"
+    case .dual:   return "mock-strip"
+    case .quad:   return "mock-grid"
     }
 }
 
