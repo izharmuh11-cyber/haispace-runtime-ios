@@ -1,0 +1,31 @@
+{
+  "canvas": {
+    "width": 1200,
+    "height": 1800,
+    "dpi": 300,
+    "orientation": "portrait"
+  },
+  "bleed": {
+    "top": 30,
+    "bottom": 30,
+    "left": 30,
+    "right": 30
+  },
+  "safeArea": {
+    "top": 60,
+    "bottom": 60,
+    "left": 60,
+    "right": 60
+  },
+  "slots": [
+    {
+      "index": 0,
+      "x": 100,
+      "y": 150,
+      "width": 1000,
+      "height": 1300,
+      "rotation": 0,
+      "zIndex": -1
+    }
+  ]
+}

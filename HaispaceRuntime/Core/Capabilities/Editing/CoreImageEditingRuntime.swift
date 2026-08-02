@@ -152,11 +152,19 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         }
         
         let sourceSize = sourceImage.extent.size
-        let canvasSize: CGSize
+        var canvasSize: CGSize
+        var templateManifest: TemplateManifest? = nil
         
-        if configuration.frame != nil {
-            // Frame template: default canvas 3:4 portrait
-            canvasSize = CGSize(width: 1080 * scale, height: 1440 * scale)
+        if let frameRef = configuration.frame {
+            let templateURL = URL(fileURLWithPath: frameRef.assetPath).appendingPathComponent("template.json")
+            if let data = try? Data(contentsOf: templateURL),
+               let manifest = try? JSONDecoder().decode(TemplateManifest.self, from: data) {
+                templateManifest = manifest
+                canvasSize = CGSize(width: manifest.canvas.width * scale, height: manifest.canvas.height * scale)
+            } else {
+                // Fallback for missing template.json
+                canvasSize = CGSize(width: 1080 * scale, height: 1440 * scale)
+            }
         } else {
             canvasSize = CGSize(width: sourceSize.width * scale, height: sourceSize.height * scale)
         }
@@ -170,7 +178,8 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
                 frameRef: frameRef,
                 canvasSize: canvasSize,
                 scale: scale,
-                context: context
+                context: context,
+                template: templateManifest
             )
         } else {
             let scaleX = canvasSize.width / sourceSize.width
@@ -206,39 +215,85 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         frameRef: FrameReference,
         canvasSize: CGSize,
         scale: CGFloat,
-        context: CIContext
+        context: CIContext,
+        template: TemplateManifest?
     ) throws -> CIImage {
         let sourceSize = sourceImage.extent.size
-        let paddingScaled = 36.0 * scale
         
-        let slot = FrameSlot(
-            id: "slot-1",
-            x: paddingScaled,
-            y: paddingScaled,
-            width: canvasSize.width - (paddingScaled * 2),
-            height: canvasSize.height - (paddingScaled * 2)
-        )
+        // Base canvas is clear
+        var canvasImage = CIImage(color: CIColor.clear).cropped(to: CGRect(origin: .zero, size: canvasSize))
+        
+        var frameSlots: [FrameSlot] = []
+        
+        if let template = template {
+            // Convert TemplateManifest slots to FrameSlots
+            for tSlot in template.slots {
+                let slot = FrameSlot(
+                    id: "slot-\(tSlot.index)",
+                    x: tSlot.x * scale,
+                    y: tSlot.y * scale,
+                    width: tSlot.width * scale,
+                    height: tSlot.height * scale,
+                    rotationDegrees: tSlot.rotation
+                )
+                frameSlots.append(slot)
+            }
+        } else {
+            // Fallback for missing template
+            let paddingScaled = 36.0 * scale
+            let slot = FrameSlot(
+                id: "slot-1",
+                x: paddingScaled,
+                y: paddingScaled,
+                width: canvasSize.width - (paddingScaled * 2),
+                height: canvasSize.height - (paddingScaled * 2)
+            )
+            frameSlots.append(slot)
+        }
+        
         let adjustment = SlotAdjustment(cropGravityX: 0.5, cropGravityY: 0.5, cropZoom: 1.0)
-        let drawRect = compositor.calculateAutoFitRect(imageSize: sourceSize, slot: slot, adjustment: adjustment)
         
-        let scaleX = drawRect.drawWidth / sourceSize.width
-        let scaleY = drawRect.drawHeight / sourceSize.height
+        // Draw the source image into each slot
+        for slot in frameSlots {
+            let drawRect = compositor.calculateAutoFitRect(imageSize: sourceSize, slot: slot, adjustment: adjustment)
+            
+            let scaleX = drawRect.drawWidth / sourceSize.width
+            let scaleY = drawRect.drawHeight / sourceSize.height
+            
+            var positioned = sourceImage
+                .transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
+                .transformed(by: CGAffineTransform(translationX: drawRect.drawX, y: drawRect.drawY))
+                .cropped(to: drawRect.clipSlotRect)
+            
+            // Apply rotation around the center of the slot if needed
+            if slot.rotationDegrees != 0 {
+                // CIImage rotation is counter-clockwise in radians, centered at (0,0).
+                // We need to translate to center, rotate, and translate back.
+                let radians = slot.rotationDegrees * .pi / 180.0
+                let centerX = slot.x + (slot.width / 2.0)
+                let centerY = slot.y + (slot.height / 2.0)
+                
+                positioned = positioned
+                    .transformed(by: CGAffineTransform(translationX: -centerX, y: -centerY))
+                    .transformed(by: CGAffineTransform(rotationAngle: -radians)) // Negative because CIImage coords are bottom-left
+                    .transformed(by: CGAffineTransform(translationX: centerX, y: centerY))
+            }
+            
+            canvasImage = positioned.composited(over: canvasImage)
+        }
         
-        var positioned = sourceImage
-            .transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
-            .transformed(by: CGAffineTransform(translationX: drawRect.drawX, y: drawRect.drawY))
-            .cropped(to: drawRect.clipSlotRect)
-        
-        if FileManager.default.fileExists(atPath: frameRef.assetPath),
-           let frameImage = CIImage(contentsOf: URL(fileURLWithPath: frameRef.assetPath)) {
+        // Overlay the frame PNG
+        let frameURL = URL(fileURLWithPath: frameRef.assetPath).appendingPathComponent("frame.png")
+        if FileManager.default.fileExists(atPath: frameURL.path),
+           let frameImage = CIImage(contentsOf: frameURL) {
             let frameScaled = frameImage.transformed(by: CGAffineTransform(
                 scaleX: canvasSize.width / frameImage.extent.width,
                 y: canvasSize.height / frameImage.extent.height
             ))
-            positioned = frameScaled.composited(over: positioned)
+            canvasImage = frameScaled.composited(over: canvasImage)
         }
         
-        return positioned.cropped(to: CGRect(origin: .zero, size: canvasSize))
+        return canvasImage.cropped(to: CGRect(origin: .zero, size: canvasSize))
     }
     
     // MARK: - JPEG Write

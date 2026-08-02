@@ -1,0 +1,58 @@
+{
+  "canvas": {
+    "width": 1200,
+    "height": 1200,
+    "dpi": 300,
+    "orientation": "landscape"
+  },
+  "bleed": {
+    "top": 30,
+    "bottom": 30,
+    "left": 30,
+    "right": 30
+  },
+  "safeArea": {
+    "top": 60,
+    "bottom": 60,
+    "left": 60,
+    "right": 60
+  },
+  "slots": [
+    {
+      "index": 0,
+      "x": 100,
+      "y": 100,
+      "width": 450,
+      "height": 450,
+      "rotation": 0,
+      "zIndex": -1
+    },
+    {
+      "index": 1,
+      "x": 650,
+      "y": 100,
+      "width": 450,
+      "height": 450,
+      "rotation": 0,
+      "zIndex": -1
+    },
+    {
+      "index": 2,
+      "x": 100,
+      "y": 650,
+      "width": 450,
+      "height": 450,
+      "rotation": 0,
+      "zIndex": -1
+    },
+    {
+      "index": 3,
+      "x": 650,
+      "y": 650,
+      "width": 450,
+      "height": 450,
+      "rotation": 0,
+      "zIndex": -1
+    }
+  ]
+}
