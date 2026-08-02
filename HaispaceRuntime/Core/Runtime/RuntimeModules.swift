@@ -116,12 +116,16 @@ public final class CapabilityModule: RuntimeModule, @unchecked Sendable {
     
     /// M-012: Production capabilities — real Camera + CoreImage Frame Engine.
     public static func production() -> CapabilityModule {
-        // M-012: CoreImageEditingRuntime sebagai implementasi konkret
-        let coreImageRuntime = CoreImageEditingRuntime()
+        // M-012.5 ②: outputDirectory di-inject dari luar.
+        // Runtime tidak tahu folder ini ada di mana — itu urusan CapabilityModule.
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        let renderOutputDir = caches.appendingPathComponent("HaispaceRendered", isDirectory: true)
+        
+        let coreImageRuntime = CoreImageEditingRuntime(outputDirectory: renderOutputDir)
         let editingCapability = EditingCapability(runtime: coreImageRuntime)
         
         return CapabilityModule(
-            camera: NoOpCameraCapability(),   // Camera di-inject dari CameraCapabilityService (singleton)
+            camera: NoOpCameraCapability(),
             editing: editingCapability,        // M-012: Frame Engine aktif
             payment: NoOpPaymentCapability(),
             delivery: NoOpDeliveryCapability(),

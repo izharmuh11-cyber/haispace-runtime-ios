@@ -40,6 +40,7 @@ public enum ExportFormat: String, Codable, Sendable {
 /// Hasil Render Preview Cepat
 public struct PreviewResult: Codable, Sendable {
     public let photoId: PhotoID
+    /// Path preview (resolusi rendah) — untuk ditampilkan di FrameSelectionView
     public let outputReference: String
     public let renderDurationMs: Double
     
@@ -51,24 +52,21 @@ public struct PreviewResult: Codable, Sendable {
 }
 
 /// Hasil Render Export Full Quality
+/// M-012.5: Berisi RenderedOutput sebagai model kaya — bukan hanya path String.
+/// Consumer (Printer, Cloud, Delivery, Gallery) menggunakan model ini secara langsung.
 public struct ExportResult: Codable, Sendable {
     public let photoId: PhotoID
-    public let outputReference: String
-    public let renderDurationMs: Double
-    public let fileSizeBytes: Int64
-    public let exportFormat: ExportFormat
+    public let rendered: RenderedOutput
     
-    public init(
-        photoId: PhotoID,
-        outputReference: String,
-        renderDurationMs: Double,
-        fileSizeBytes: Int64,
-        exportFormat: ExportFormat
-    ) {
+    /// Compatibility accessor — untuk kode yang masih menggunakan outputReference: String
+    public var outputReference: String { rendered.fullPath }
+    public var renderDurationMs: Double { rendered.renderDurationMs }
+    public var fileSizeBytes: Int64 { rendered.fileSizeBytes }
+    public var exportFormat: ExportFormat
+    
+    public init(photoId: PhotoID, rendered: RenderedOutput, exportFormat: ExportFormat = .jpeg) {
         self.photoId = photoId
-        self.outputReference = outputReference
-        self.renderDurationMs = renderDurationMs
-        self.fileSizeBytes = fileSizeBytes
+        self.rendered = rendered
         self.exportFormat = exportFormat
     }
 }

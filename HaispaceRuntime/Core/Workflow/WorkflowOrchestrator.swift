@@ -139,19 +139,22 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             )
             self.currentStage = .capturing
             
-        case .selectTemplate(let frameId):
-            guard let sessionId = activeSessionId else { throw WorkflowError.sessionNotActive }
+        case .selectTemplate(let frameId):\n            guard let sessionId = activeSessionId else { throw WorkflowError.sessionNotActive }
 
-            // M-012 STEP 3: Gunakan path foto aktual dari CapturedPhotoStore
-            // Foto yang dipakai adalah foto pertama yang dipilih tamu (selectedPhotos)
+            // M-012.5 ①: Orchestrator membaca dari store (tugasnya sebagai koordinator),
+            // lalu membungkus dalam PhotoReference — EditingCapability tidak pernah menyentuh store.
             let capturedPhotos = await CapturedPhotoStore.shared.capturedPhotos
-            guard let firstPhoto = capturedPhotos.first,
-                  let photoPath = firstPhoto.fullQualityPath ?? firstPhoto.thumbnailPath else {
+            guard let firstPhoto = capturedPhotos.first else {
+                throw WorkflowError.sessionNotActive
+            }
+            guard let sourcePath = firstPhoto.fullQualityPath ?? firstPhoto.thumbnailPath else {
                 throw WorkflowError.sessionNotActive
             }
             
-            // Construct path frame asset dari local storage
-            // Convention: ~/Library/Caches/HaispaceFrames/{frameId}.png
+            let photoRef = PhotoReference(photoId: PhotoID(rawValue: firstPhoto.id), sourcePath: sourcePath)
+            
+            // M-012.5 ②: Frame asset path ditentukan di Orchestrator (yang tahu folder convention)
+            // Runtime hanya menerima path lengkap — tidak tahu ini ada di Caches atau Documents
             let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
             let frameAssetPath = cachesDir.appendingPathComponent("HaispaceFrames/\(frameId).png").path
             
@@ -164,18 +167,25 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 sessionId: sessionId.rawValue,
                 stage: .exporting,
                 eventType: .templateSelected,
-                metadata: ["frameId": frameId, "photoCount": String(capturedPhotos.count)]
+                metadata: [
+                    "frameId": frameId,
+                    "photoId": photoRef.photoId.rawValue,
+                    "photoCount": String(capturedPhotos.count)
+                ]
             )
             
             self.currentStage = .exporting
 
             let correlationId = currentCorrelationId ?? CorrelationID()
-            // M-012: Export foto pertama dengan frame yang dipilih
-            let exportResult = try await editing.requestExport(photoInput: photoPath, correlationId: correlationId)
+            // EditingCapability menerima path dari PhotoReference — bukan singleton
+            let exportResult = try await editing.requestExport(photoInput: photoRef.sourcePath, correlationId: correlationId)
             self.activePhotoId = exportResult.photoId
             self.activeOutputReference = exportResult.outputReference
 
-            HaispaceLogger.info("[M-012] Frame export selesai: \(exportResult.outputReference) — \(exportResult.fileSizeBytes / 1024)KB", category: "editing")
+            HaispaceLogger.info(
+                "[M-012] Frame export — \(exportResult.rendered.resolution) — \(exportResult.rendered.fileSizeFormatted) — \(exportResult.rendered.renderDurationFormatted)",
+                category: "editing"
+            )
 
             // Transition to Payment
             do {
