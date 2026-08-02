@@ -26,9 +26,9 @@ public actor CameraOrientationCoordinator {
         case .portraitUpsideDown:
             return .portraitUpsideDown
         case .landscapeLeft:
-            return .landscapeRight // Map physically: device rotated left means camera sees right
+            return .landscapeLeft // Phase 6A: Direct map
         case .landscapeRight:
-            return .landscapeLeft // Map physically: device rotated right means camera sees left
+            return .landscapeRight // Phase 6A: Direct map
         default:
             return .landscapeRight // Default for Haispace photobooths
         }

@@ -35,21 +35,9 @@ public actor CapturePipeline: NSObject, AVCapturePhotoCaptureDelegate {
                 // Phase 4: Sync orientation before capture
                 let orientation = await CameraOrientationCoordinator.shared.currentVideoOrientation()
                 
-                var mirrorLog = "Unknown"
                 if let connection = self.photoOutput.connection(with: .video) {
                     connection.videoOrientation = orientation
-                    mirrorLog = "isVideoMirrored: \(connection.isVideoMirrored)"
                 }
-                
-                let log = """
-                =========================
-                MIRROR DIAGNOSTIC
-                =========================
-                Connection : \(mirrorLog)
-                Position   : Front (Hardcoded for Kiosk)
-                """
-                
-                await RuntimeTimelineLogger.shared.logEvent("MIRROR_DIAGNOSTIC", payload: log)
                 await RuntimeTimelineLogger.shared.logEvent("[2] AVCapturePhotoOutput.capturePhoto()")
                 self.photoOutput.capturePhoto(with: settings, delegate: self)
             }
@@ -102,17 +90,39 @@ public actor CapturePipeline: NSObject, AVCapturePhotoCaptureDelegate {
             let pixelWidth = image.cgImage?.width ?? Int(image.size.width)
             let pixelHeight = image.cgImage?.height ?? Int(image.size.height)
             
+            // Phase 6A: Observability Chain
+            let coordinatorOrient = await CameraOrientationCoordinator.shared.currentVideoOrientationString()
+            let connOrient: String
+            let isMirrored: Bool
+            if let connection = self.photoOutput.connection(with: .video) {
+                isMirrored = connection.isVideoMirrored
+                switch connection.videoOrientation {
+                case .portrait: connOrient = "Portrait"
+                case .portraitUpsideDown: connOrient = "Portrait Upside Down"
+                case .landscapeRight: connOrient = "Landscape Right"
+                case .landscapeLeft: connOrient = "Landscape Left"
+                @unknown default: connOrient = "Unknown"
+                }
+            } else {
+                connOrient = "Unknown"
+                isMirrored = false
+            }
+            
             let log = """
+            =========================
+            OBSERVABILITY CHAIN
+            =========================
+            [1] Preview Coordinator: \(coordinatorOrient)
+            [2] Capture Connection : \(connOrient)
+            [3] Video Mirrored     : \(isMirrored)
+            [4] UIImage Orientation: \(orientationStr)
+            
             =========================
             CAPTURE RESULT
             =========================
             Image Width  : \(pixelWidth)
             Image Height : \(pixelHeight)
-            
-            UIImage Size : \(Int(image.size.width)) x \(Int(image.size.height))
             Aspect Ratio : \(aspectStr)
-            
-            EXIF Orientation: \(orientationStr)
             """
             await RuntimeTimelineLogger.shared.logEvent("CAPTURE_RESULT", payload: log)
         }
