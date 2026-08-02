@@ -203,13 +203,17 @@ struct DiagnosticsDashboardView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 54)
             .background(
-                diagnostics.isRunning
-                    ? Color.white.opacity(0.1)
-                    : LinearGradient(
-                        colors: [Color(hex: "#7C3AED"), Color(hex: "#5B21B6")],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                Group {
+                    if diagnostics.isRunning {
+                        Color.white.opacity(0.1)
+                    } else {
+                        LinearGradient(
+                            colors: [Color(hex: "#7C3AED"), Color(hex: "#5B21B6")],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    }
+                }
             )
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(
