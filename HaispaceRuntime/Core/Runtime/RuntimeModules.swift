@@ -125,7 +125,7 @@ public final class CapabilityModule: RuntimeModule, @unchecked Sendable {
         let editingCapability = EditingCapability(runtime: coreImageRuntime)
         
         return CapabilityModule(
-            camera: NoOpCameraCapability(),
+            camera: CameraCapabilityService.shared,
             editing: editingCapability,        // M-012: Frame Engine aktif
             payment: NoOpPaymentCapability(),
             delivery: NoOpDeliveryCapability(),
