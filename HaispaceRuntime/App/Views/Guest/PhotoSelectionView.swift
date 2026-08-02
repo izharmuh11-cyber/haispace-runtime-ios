@@ -58,8 +58,9 @@ struct PhotoSelectionView: View {
                     
                     // Button Lanjut
                     Button(action: {
-                        withAnimation(.spring) {
-                            appState.currentSession?.proceedToFrameSelection()
+                        // M-011 FINAL: Routing langsung, tidak melalui SessionStore
+                        Task {
+                            try? await appState.send(.selectTemplate(frameId: "")) // placeholder
                             appState.navigateTo(.frameSelection)
                         }
                     }) {

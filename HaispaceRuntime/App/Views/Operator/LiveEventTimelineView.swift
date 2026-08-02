@@ -33,8 +33,9 @@ struct LiveEventTimelineView: View {
                         
                         Spacer()
                         
-                        if let sessionId = appState.currentSession?.sessionId {
-                            Text(sessionId.prefix(8))
+                        // M-011 FINAL: sessionId dari WorkflowOrchestrator, bukan SessionStore
+                        if !appState.sessionContext.guestName.isEmpty {
+                            Text(appState.sessionContext.guestName.prefix(8))
                                 .font(.caption2.monospaced())
                                 .foregroundColor(.gray)
                         }

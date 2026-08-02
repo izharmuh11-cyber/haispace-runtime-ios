@@ -127,15 +127,8 @@ final class AppState {
     /// Satu-satunya cara yang benar untuk mengubah workflow dari View.
     /// AppState meneruskan ke Runtime — tidak membuat keputusan sendiri.
     func send(_ intent: WorkflowIntent) async throws {
-        // [COMPATIBILITY BRIDGE]
-        // Karena ActiveSessionView masih mengandalkan SessionStore (Legacy) dan belum dimigrasi (PR-13),
-        // kita perlu mensinkronisasi WorkflowOrchestrator dengan penciptaan SessionStore.
-        if case .selectPackage(let packageId) = intent {
-            let pkg = boothConfig.activePackages.first(where: { $0.id == packageId }) ?? .mockStandard
-            let guest = pendingGuest ?? GuestInfo(name: "Guest", instagram: nil, phoneNumber: nil, queueNumber: 1)
-            startNewSession(package: pkg, guest: guest)
-        }
-
+        // M-011 FINAL: Compatibility bridge ke SessionStore dihapus.
+        // WorkflowOrchestrator adalah satu-satunya yang memproses intent.
         try await runtime.orchestrator.handleIntent(intent)
         let newStage = await runtime.orchestrator.currentStage
         currentRoute = WorkflowRouteMapper.route(for: newStage)
@@ -214,66 +207,18 @@ final class AppState {
         }
     }
 
-    // MARK: - Legacy Bridge (COMPATIBILITY WINDOW — akan dihapus setelah migrasi selesai)
-    //
-    // startNewSession() masih ada untuk mendukung View yang belum dimigrasikan ke send(intent:).
-    // Akan dihapus pada PR-13 (Session Root Integration).
-    //
-    // Runtime Adoption: AppState = 30% (orchestrator via Runtime, session via Legacy SessionStore)
-
-    @available(*, deprecated, message: "Gunakan send(.startSession(guest:package:)) setelah PR-13. AppState tidak boleh membuat Session langsung.")
-    var currentSession: SessionStore? {
-        get { _legacyCurrentSession }
-        set { _legacyCurrentSession = newValue }
-    }
-
-    private var _legacyCurrentSession: SessionStore?
-
-    var hasActiveSession: Bool {
-        _legacyCurrentSession != nil
-    }
-
-    @available(*, deprecated, message: "Gunakan send(.startSession) setelah PR-13.")
-    @discardableResult
-    func startNewSession(package: BoothPackage, guest: GuestInfo) -> SessionStore {
-        if let existing = _legacyCurrentSession {
-            HaispaceLogger.warning(
-                "[Legacy] Sesi baru dimulai sebelum sesi lama selesai: \(existing.sessionId)",
-                category: "session"
-            )
-            existing.finalize()
-        }
-        let session = SessionStore(package: package, guest: guest)
-        _legacyCurrentSession = session
-
-        if let eventId = boothConfig.activeEventId {
-            p2p.configureMPCServiceType(eventId: eventId)
-        }
-
-        HaispaceLogger.info(
-            "[Legacy] SessionStore dibuat: \(session.sessionId) — migrasi ke Runtime pending PR-13",
-            category: "session"
-        )
-        RuntimeTimelineLogger.shared.logEvent("LEGACY SESSION CREATED", payload: "sessionId = \(session.sessionId)")
-        return session
-    }
-
-    @available(*, deprecated, message: "Gunakan send(.endSession) setelah PR-13.")
-    func endCurrentSession() {
-        guard let session = _legacyCurrentSession else { return }
-        session.finalize()
-        _legacyCurrentSession = nil
-    }
-
-    @available(*, deprecated, message: "Gunakan send(_ intent: WorkflowIntent) sesuai ADR-001.")
+    // MARK: - Navigation Helper
+    // M-011 FINAL: navigateTo hanya mengubah route — tidak lagi membuat SessionStore.
+    // Semua workflow state dikelola oleh WorkflowOrchestrator.
     func navigateTo(_ route: KioskRoute) {
         currentRoute = route
-        if route != .landing && _legacyCurrentSession == nil {
-            let pkg = BoothPackage.mockStandard
-            let guest = pendingGuest ?? GuestInfo(name: "Guest", instagram: nil, phoneNumber: nil, queueNumber: 1)
-            startNewSession(package: pkg, guest: guest)
-        }
-        HaispaceLogger.warning("[DEPRECATED] navigateTo(\(route))", category: "workflow")
+        HaispaceLogger.info("[Route] \(route)", category: "workflow")
+    }
+    
+    // M-011 FINAL: hasActiveSession sekarang berdasarkan WorkflowOrchestrator.currentStage
+    var hasActiveSession: Bool {
+        let activeStages: [KioskRoute] = [.activeSession, .photoSelection, .frameSelection, .payment, .processing, .delivery]
+        return activeStages.contains(currentRoute)
     }
 }
 
@@ -311,14 +256,24 @@ extension AppState {
     @MainActor
     static var previewWithActiveSession: AppState {
         let state = preview
-        let session = state.startNewSession(
-            package: .mockStandard,
-            guest: .mockSarah
+        // M-011 FINAL: Preview menggunakan CapturedPhotoStore langsung, tanpa SessionStore
+        state.currentRoute = .activeSession
+        state.sessionContext = SessionContext(
+            maxPhotoCount: 5,
+            minPhotoCount: 3,
+            queueNumber: 42,
+            guestName: "Sarah",
+            remainingSeconds: 180
         )
-        session.status = .photoSelection
         let mockPhotos = CapturedPhoto.mockPhotos(count: 5)
-        for photo in mockPhotos { session.photos.addPhotoForPreview(photo) }
-        session.photos.selectedPhotoIds = Set(mockPhotos.prefix(3).map { $0.id })
+        for photo in mockPhotos {
+            CapturedPhotoStore.shared.receivePhotoEvent(.thumbnailArrived(
+                photoId: photo.id,
+                data: photo.thumbnailData,
+                capturedAt: photo.capturedAt,
+                sortOrder: photo.sortOrder
+            ))
+        }
         return state
     }
 }

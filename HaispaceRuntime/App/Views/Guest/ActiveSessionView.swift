@@ -46,10 +46,8 @@ struct ActiveSessionView: View {
     @State private var currentPoseIndex: Int = 0
     private let activityTimer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
     
-    // M-011 STEP 3B.1: session hanya dipakai untuk countdown timer sementara (STEP 3B.4)
-    private var session: SessionStore? {
-        appState.currentSession
-    }
+    // M-011 FINAL: Semua data sesi dibaca dari appState.sessionContext.
+    // SessionStore tidak lagi dipakai di View ini.
     
     var body: some View {
         GeometryReader { screenGeo in
@@ -154,14 +152,9 @@ struct ActiveSessionView: View {
             StreamingDecoderService.shared.onFrameAnalyzed = nil
             StreamingDecoderService.shared.onVideoDimensionsChanged = nil
         }
-        .onChange(of: session?.status) { oldStatus, newStatus in
-            if newStatus == .photoSelection {
-                // M-011 STEP 3B.2: navigateTo diganti dengan send(intent:)
-                Task {
-                    try? await appState.send(.triggerShutter) // placeholder — routing sebenarnya melalui WorkflowOrchestrator
-                    appState.navigateTo(.photoSelection) // masih dipakai sementara untuk routing legacy
-                }
-            }
+        .onChange(of: appState.currentRoute) { _, newRoute in
+            // M-011 FINAL: Route changes dikelola oleh AppState, bukan session.status
+            // Tidak perlu tindakan tambahan — view akan dismiss secara otomatis
         }
     }
     
@@ -201,7 +194,13 @@ struct ActiveSessionView: View {
             withAnimation(.spring) {
                 isBriefing = false
             }
-            session?.start()
+            // M-011 FINAL: SessionTimer via WorkflowOrchestrator
+            // session?.start() dihapus. Orchestrator mengelola timer.
+            Task {
+                let duration = appState.sessionContext.maxPhotoCount > 0 ?
+                    (appState.currentSession?.package_.durationSeconds ?? 300) : 300
+                await appState.runtime.orchestrator.startSessionCountdown(duration: duration)
+            }
         }
     }
     
@@ -331,8 +330,9 @@ struct ActiveSessionView: View {
                             
                             if currentCount >= maxCount {
                                 RuntimeTimelineLogger.shared.logEvent("PHOTO SELECTION ROUTE ACTIVATED")
-                                // Notify SessionStore untuk transisi (masih diperlukan untuk routing sementara)
-                                appState.currentSession?.proceedToPhotoSelection()
+                                // M-011 FINAL: Routing langsung ke photoSelection via AppState
+                                appState.currentRoute = .photoSelection
+                                appState.navigateTo(.photoSelection)
                             }
                         } catch {
                             RuntimeTimelineLogger.shared.logEvent("CAPTURE ERROR: Data load failed - \(error.localizedDescription)")
@@ -1030,14 +1030,14 @@ struct ActiveSessionView: View {
                                 .frame(height: 14)
                                 .background(Color.white.opacity(0.3))
                             
-                            // Timer Status
+                            // Timer Status — M-011 FINAL: Baca dari sessionContext.remainingSeconds
                             HStack(spacing: 8) {
                                 Circle()
-                                    .fill(s.remainingSeconds <= 30 ? Color.red : Color.green)
+                                    .fill(appState.sessionContext.remainingSeconds <= 30 ? Color.red : Color.green)
                                     .frame(width: 8, height: 8)
                                     .overlay(
                                         Circle()
-                                            .stroke(s.remainingSeconds <= 30 ? Color.red : Color.green, lineWidth: 1.5)
+                                            .stroke(appState.sessionContext.remainingSeconds <= 30 ? Color.red : Color.green, lineWidth: 1.5)
                                             .scaleEffect(isPulsing ? 2.2 : 1.0)
                                             .opacity(isPulsing ? 0.0 : 1.0)
                                     )
@@ -1047,7 +1047,7 @@ struct ActiveSessionView: View {
                                         }
                                     }
                                 
-                                Text("\(formatTime(s.remainingSeconds))")
+                                Text("\(formatTime(appState.sessionContext.remainingSeconds))")
                                     .font(.system(size: 13, weight: .black, design: .rounded))
                                     .foregroundStyle(s.remainingSeconds <= 30 ? Color.red : Color.white)
                             }
@@ -1191,7 +1191,11 @@ struct ActiveSessionView: View {
                 HStack {
                     Spacer()
                     Button(action: {
-                        appState.navigateTo(.photoSelection)
+                        // M-011 FINAL: navigateTo diganti akses langsung ke currentRoute
+                        Task {
+                            await appState.runtime.orchestrator.stopSessionCountdown()
+                            appState.navigateTo(.photoSelection)
+                        }
                     }) {
                         HStack(spacing: 6) {
                             Text("Selesai")

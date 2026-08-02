@@ -235,7 +235,8 @@ struct PairingSetupView: View {
     
     // MARK: - QR Generation Logic
     private func setupQRGeneration() {
-        let eventId = appState.currentSession?.sessionId ?? "TEST-EVENT-\(Int.random(in: 1000...9999))"
+        // M-011 FINAL: Gunakan boothConfig.activeEventId sebagai identitas event, bukan sessionId legacy
+        let eventId = appState.boothConfig.activeEventId ?? "TEST-EVENT-\(Int.random(in: 1000...9999))"
         let localIp = NetworkUtility.getWiFiAddress() ?? "127.0.0.1"
         // Port statis agar QR lama tetap valid — menggunakan defaultPort dari LocalTCPRouterService
         let staticPort = 55123
