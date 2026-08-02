@@ -46,7 +46,8 @@ public actor NoOpEditingCapability: @preconcurrency EditingCapabilityProtocol {
     }
     public func requestExport(photoInput: String, correlationId: CorrelationID) async throws -> ExportResult {
         HaispaceLogger.warning("NoOpEditingCapability.requestExport() dipanggil", category: "capability")
-        return ExportResult(photoId: PhotoID(), outputReference: "", renderDurationMs: 0.0, fileSizeBytes: 0, exportFormat: .jpeg)
+        let rendered = RenderedOutput(fullPath: "", widthPixels: 0, heightPixels: 0, renderDurationMs: 0.0)
+        return ExportResult(photoId: PhotoID(), rendered: rendered, exportFormat: .jpeg)
     }
     public func stopSession() async {
         HaispaceLogger.debug("NoOpEditingCapability.stopSession()", category: "capability")
