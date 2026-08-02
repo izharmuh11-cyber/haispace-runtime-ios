@@ -34,10 +34,22 @@ public actor CapturePipeline: NSObject, AVCapturePhotoCaptureDelegate {
             Task {
                 // Phase 4: Sync orientation before capture
                 let orientation = await CameraOrientationCoordinator.shared.currentVideoOrientation()
+                
+                var mirrorLog = "Unknown"
                 if let connection = self.photoOutput.connection(with: .video) {
                     connection.videoOrientation = orientation
+                    mirrorLog = "isVideoMirrored: \(connection.isVideoMirrored)"
                 }
                 
+                let log = """
+                =========================
+                MIRROR DIAGNOSTIC
+                =========================
+                Connection : \(mirrorLog)
+                Position   : Front (Hardcoded for Kiosk)
+                """
+                
+                await RuntimeTimelineLogger.shared.logEvent("MIRROR_DIAGNOSTIC", payload: log)
                 await RuntimeTimelineLogger.shared.logEvent("[2] AVCapturePhotoOutput.capturePhoto()")
                 self.photoOutput.capturePhoto(with: settings, delegate: self)
             }

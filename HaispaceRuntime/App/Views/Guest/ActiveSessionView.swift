@@ -308,6 +308,21 @@ struct ActiveSessionView: View {
                                 s.photos.upgradeToFullQuality(photoId: photoId, fullData: data)
                                 RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
                                 
+                                // Phase 5: Show Preview Card UX
+                                if let newlyAdded = s.photos.capturedPhotos.first(where: { $0.id == photoId }) {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                        self.activeSelectedPhotoForPreview = newlyAdded
+                                    }
+                                    
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                                        if self.activeSelectedPhotoForPreview?.id == photoId && s.stage == .capturing {
+                                            withAnimation(.easeOut(duration: 0.3)) {
+                                                self.activeSelectedPhotoForPreview = nil
+                                            }
+                                        }
+                                    }
+                                }
+                                
                                 currentCount = s.photos.capturedCount
                                 maxCount = s.package_.maxPhotoCount
                                 

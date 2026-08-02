@@ -40,6 +40,11 @@ public actor CameraSessionController {
         
         // Output configuration will be handled by pipelines
         
+        // M-010 Phase 5: High-Resolution Photo Preset
+        if captureSession.canSetSessionPreset(.photo) {
+            captureSession.sessionPreset = .photo
+        }
+        
         isConfigured = true
         logger.info("Camera session configured successfully.")
     }
