@@ -3,150 +3,48 @@
 
 ---
 
-## Platform Vision
-
-> Haispace bukan sekadar aplikasi photobooth.
-> Haispace adalah **platform** yang terdiri dari tiga sub-platform yang saling terpisah tetapi saling mendukung.
-
-```
-                    Haispace Platform
-                           │
-          ┌────────────────┼────────────────┐
-          │                │                │
-          ▼                ▼                ▼
-  Runtime Platform   Authoring Platform   Event Management
-  (di booth)         (tim desain)         (operator/admin)
-```
-
-## DNA Platform
+## Platform DNA
 
 > **"Cloud stores facts. Runtime executes behavior."**
 
-Artinya alur asset **bukan** upload langsung ke iPad:
+Haispace bukan satu aplikasi. Haispace adalah **satu platform yang terdiri dari beberapa produk** yang bertemu di konstitusi yang sama.
 
 ```
-Mission Control
-        │
-        ▼
-      Event
-        │
-        ▼
-    Manifest
-        │
-   ┌────┼──────┬──────────┬──────────┐
-   ▼    ▼      ▼          ▼          ▼
-Frame Filter  Logo   Printer   Booth
-Asset  Asset  Asset   Config   Config
-        │
-        ▼
-      Cloud (CDN)
-        │
-        ▼
-   Booth (iPad)
-   ├── Download Manifest
-   ├── Download Assets
-   ├── Cache lokal
-   └── Runtime (offline-capable)
+                    Haispace Platform
+                   (Constitutional Repo)
+                           │
+     ┌─────────────────────┼─────────────────────┐
+     │                     │                     │
+     ▼                     ▼                     ▼
+Runtime Track         Cloud Track          Authoring Track
+(M-xxx)               (C-xxx)              (A-xxx)
+     │                                          │
+     └──────────────────────────────────────────┘
+                           │
+                    Integration Track
+                        (I-xxx)
 ```
-
-**Event adalah pusat semuanya.** Operator cukup melakukan `Sync Event` — semua asset aktif otomatis.
-
-**Frame hanyalah salah satu jenis Asset.** Algoritma yang sama berlaku untuk:
-- Frame
-- Overlay / Sticker / Border / Watermark  
-- Filter (LUT)
-- Music / Soundtrack
-- Branding (logo, backdrop)
 
 ---
 
-## 1. Runtime Platform
+## Prinsip Pemisahan Track
 
-**Berjalan di iPad booth. Target: Customer (tamu).**
-
-```
-Camera
-    ↓
-Workflow
-    ↓
-Editing / Frame
-    ↓
-Filter
-    ↓
-Printer
-    ↓
-Cloud Delivery
-```
-
-Milestone: M-010 → M-012 → M-013 → M-014 → M-015 → M-016 → M-017
-
----
-
-## 2. Authoring Platform
-
-**Dipakai tim desain untuk membuat Asset. Target: Internal.**
-
-```
-Upload file aset (PNG, LUT, dll.)
-    ↓
-AssetDetector (auto-detect slot / metadata)
-    ↓
-Visual Preview + Fine-tune
-    ↓
-Generate Asset Package
-    ↓
-Publish ke Cloud → masuk Asset library
-    ↓
-Dipakai dalam Manifest per Event
-```
-
-Milestone: M-012A (Asset Authoring Platform)
-
-**Output:** `Asset Package` (self-contained per asset type)
-
-Contoh untuk Frame:
-```
-wedding-classic/
-    ├── frame.png           ← overlay PNG (alpha channel)
-    ├── template.json       ← slot coordinates (auto-generated)
-    ├── thumbnail.webp      ← preview kecil untuk UI picker
-    ├── preview.jpg         ← full preview dengan foto contoh
-    └── manifest.json       ← metadata (id, version, category, checksum)
-```
-
-Algoritma yang sama berlaku untuk asset lain (overlay, sticker, border, watermark).
-
----
-
-## 3. Event Management Platform
-
-**Dipakai operator untuk setup event. Target: Operator Haispace.**
-
-```
-Buat Event baru
-    ↓
-Pilih Theme / Package
-    ↓
-Frame Collection aktif
-    ↓
-Filter Collection aktif
-    ↓
-Printer Setting aktif
-    ↓
-Pricing aktif
-    ↓
-Branding aktif
-```
-
-Operator tidak lagi setting satu per satu. Pilih `Wedding Package A` → semua aktif otomatis.
-
-Milestone: M-018 (planned, setelah Runtime dan Authoring stabil)
+| Track | Repository | Target User | Bergantung Pada |
+|---|---|---|---|
+| **Runtime** | `haispace-runtime-ios` | Customer (tamu booth) | — (berdiri sendiri) |
+| **Cloud** | `hsp-cloud` | Platform operator | Runtime (menerima fakta dari Runtime) |
+| **Integration** | `haispace-runtime-ios` | Booth (iPad) | Cloud (C-002 harus selesai) |
+| **Authoring** | TBD | Tim desain | Cloud + Integration |
 
 ---
 
 ---
 
-## Milestone Roadmap (Urutan)
+# Runtime Track (M-xxx)
+
+> Runtime adalah produk yang 100% berjalan di dalam iPad.
+> Tidak membutuhkan backend untuk beroperasi.
+> Semua milestone M-xxx harus bisa dijalankan dalam mode offline penuh.
 
 ---
 
@@ -164,16 +62,18 @@ Platform Freeze v1.0 aktif:
 ### ✅ M-011 — Single Runtime Workflow
 **Status: SELESAI** | Commit: `0f1dca1`
 
-`SessionStore` dihapus. Zero bridge. Zero legacy. Semua state mengalir melalui `WorkflowOrchestrator`.
+`SessionStore` dihapus. Zero bridge. Zero legacy.
+Semua state mengalir melalui `WorkflowOrchestrator`.
 
 ---
 
-### 🔄 M-012 — Frame Engine (Runtime Platform)
+### 🔄 M-012 — Frame Engine
 **Status: Engineering Complete — Waiting for Production Frame Assets & Device Validation**
 
-Scope: Frame Engine yang merender dari local file. Tidak lebih.
+Frame Engine yang merender. Platform-agnostic. Zero UI dependency.
 
-> **Catatan penting:** M-012 menggunakan frame dari local disk (manual drop). Asset Sync dari Cloud akan diimplementasikan setelah M-012 selesai, sehingga format asset di M-012A langsung mengikuti format yang benar-benar dipakai Cloud.
+> **Catatan:** M-012 menggunakan frame dari local disk (manual drop).
+> Frame dari Cloud Manifest akan tersedia setelah I-001 selesai.
 
 **Definition of Done (12 kriteria):**
 
@@ -190,190 +90,267 @@ Scope: Frame Engine yang merender dari local file. Tidak lebih.
 | 9 | Preview ↔ Export konsisten | ⏳ iPad |
 | 10 | Benchmark < 2000ms | ⏳ iPad |
 | 11 | **Hasil render dilihat visual manusia di iPad** | ❌ |
-| 12 | Log tersimpan di R2 | ❌ |
+| 12 | Log tersimpan | ❌ |
 
 **Post-M-012 improvement (dijadwalkan):**
-- PNG LRU Cache di `CoreImageEditingRuntime` — menghindari re-read disk setiap render
-
-> **Catatan:** M-012 akan segera mendukung Frame Package format (membaca `manifest.json` dan `template.json`) begitu M-012A selesai — tanpa perubahan engine.
+- PNG LRU Cache di `CoreImageEditingRuntime`
 
 ---
 
-### 📋 Asset Sync — Runtime Platform (baru, antara M-012 dan M-012A)
+### 📋 M-013 — Filter Experience
 **Status: PLANNED — mulai setelah M-012 ditutup**
 
-**Mengapa harus sebelum M-012A?**
-
-M-012A menghasilkan Asset Package yang akan di-publish ke Cloud. Tapi jika Runtime belum bisa membaca Manifest dari Cloud, format asset di M-012A tidak akan diketahui harus seperti apa. Dengan mengimplementasikan Asset Sync lebih dulu, format yang dihasilkan M-012A langsung cocok dengan yang sudah berjalan di production.
-
-**Yang dibangun:**
+LUT/Metal filter pipeline. Customer memilih filter sebelum print.
 
 ```
-Runtime (HaiBooth)
-    ├── ManifestService     ← GET /manifest?booth={boothId}
-    ├── AssetDownloader     ← Download asset yang berubah versi/checksum
-    ├── AssetCache          ← ~/Library/Caches/HaispaceAssets/{assetId}/
-    └── ManifestVersionPin  ← Session aktif tidak dapat manifest baru
+RenderedOutput
+    ↓
+FilterCapability (LUT / Metal)
+    ↓
+FilteredOutput
 ```
 
-**Sync flow:**
+---
+
+### 📋 M-014 — Print Experience
+**Status: PLANNED — mulai setelah M-013**
+
+`PrinterCapability` aktif. `RenderedOutput.fullPath` → AirPrint / DNP thermal.
+
+```
+FilteredOutput
+    ↓
+PrinterCapability
+    ↓
+AirPrint / DNP SDK
+```
+
+---
+
+---
+
+# Cloud Track (C-xxx)
+
+> Cloud menyimpan fakta. Cloud tidak pernah menentukan langkah workflow.
+> Setiap Phase Cloud berdiri sendiri dan dapat dikerjakan paralel dengan Runtime Track.
+> Sumber: `haispace-platform/cloud/BACKEND_IMPLEMENTATION_PLAN.md`
+
+---
+
+### 📋 C-001 — Infrastructure Foundation
+**Status: PLANNED**
+**Repository: `hsp-cloud`**
+
+Target: Backend siap menerima Booth pertama kali.
+
+```
+C-001 mencakup:
+    ├── Device Registration   (POST /v1/devices)
+    ├── Authentication        (JWT + apiKey)
+    ├── Organization          (multi-tenant root)
+    ├── Operator Management   (role: owner | manager | staff)
+    └── Booth Management      (status lifecycle)
+```
+
+**DoD:** Booth nyata (iPad dev) dapat register dan berautentikasi ke backend.
+
+---
+
+### 📋 C-002 — Content Delivery
+**Status: PLANNED — mulai setelah C-001**
+**Repository: `hsp-cloud`**
+
+Target: Booth dapat mengambil Manifest dan Asset untuk memulai session.
+
+```
+C-002 mencakup:
+    ├── Event Management      (draft → active → completed → archived)
+    ├── Manifest API          (create draft, publish, version monotonic)
+    ├── Asset API             (upload, checksum, download-url, presigned)
+    └── Package API           (pricing, captureLimit, deliveryMethods)
+```
+
+**Ini adalah milestone yang membuat Manifest pertama kali "hidup".**
+
+Manifest pada C-002 sudah bisa memuat:
+```
+Event: Wedding A
+Manifest v1
+    ├── Frame Asset(s)
+    ├── Filter LUT Asset(s)
+    ├── Printer Profile Asset
+    └── Branding Asset
+```
+
+**DoD:** Booth dapat fetch Manifest yang berisi semua jenis asset, dan men-download pre-signed URL per asset.
+
+> **Catatan:** C-002 sengaja dikerjakan setelah M-013 dan M-014 selesai,
+> sehingga saat Manifest pertama kali dipakai, ia sudah membawa Frame + Filter + Printer sekaligus —
+> bukan hanya satu jenis asset.
+
+---
+
+### 📋 C-003 — Runtime Data Ingest
+**Status: PLANNED — mulai setelah C-002**
+**Repository: `hsp-cloud`**
+
+Target: Runtime dapat mengirim fakta ke Cloud. Cloud menjadi mirror.
+
+```
+C-003 mencakup:
+    ├── Session Archive API   (ingest SessionSnapshot, idempotent)
+    ├── Domain Event Upload   (batch, append-only, idempotency via eventId)
+    └── Audit Upload          (batch, 7-year retention)
+```
+
+**DoD:** Runtime dapat upload SessionSnapshot setelah payment + upload DomainEvent batch.
+
+---
+
+### 📋 C-004 — Operations & Analytics
+**Status: PLANNED — mulai setelah C-003**
+**Repository: `hsp-cloud` + `hsp-mission-control`**
+
+Target: Operator dapat memantau platform via Mission Control.
+
+```
+C-004 mencakup:
+    ├── Read-only session/event/audit endpoints untuk Mission Control
+    ├── Analytics projections (DailySessionSummary, RevenueByEvent, dll.)
+    └── Booth health dashboard
+```
+
+---
+
+---
+
+# Integration Track (I-xxx)
+
+> Milestone yang menghubungkan Runtime dengan Cloud.
+> Bergantung pada: C-002 (Manifest + Asset API) sudah production-ready.
+> Berjalan di `haispace-runtime-ios`.
+
+---
+
+### 📋 I-001 — Runtime Asset Sync
+**Status: PLANNED — mulai setelah C-002 selesai**
+**Repository: `haispace-runtime-ios`**
+
+Runtime membaca Manifest dari Cloud dan men-cache Asset secara lokal.
+
 ```
 App Launch / setiap 1 jam
     ↓
 ManifestService.fetchLatest(boothId)
     ↓
-Bandingkan assetRefs vs lokal cache (by checksum)
+Bandingkan assetRefs vs cache lokal (by checksum)
     ↓
-AssetDownloader.download(diff)  ← hanya asset yang berubah
+AssetDownloader.download(diff)   ← hanya asset yang berubah
     ↓
-Simpan ke cache lokal
+Simpan ke ~/Library/Caches/HaispaceAssets/{assetId}/
     ↓
 CoreImageEditingRuntime baca dari cache
     ↓
 Session berjalan offline
 ```
 
+**Yang dibangun:**
+- `ManifestService` — fetch + version pinning per session
+- `AssetDownloader` — checksum validation + delta download
+- `AssetCache` — LRU, crash-safe, disk-backed
+- `ManifestVersionPin` — session aktif tidak dapat manifest baru
+
 **Invariant (dari SYNC_STRATEGY.md):**
-- Session yang sedang berjalan TIDAK boleh mendapat manifest baru
+- Session yang sedang berjalan **tidak boleh** mendapat manifest baru
 - Manifest baru hanya berlaku untuk session berikutnya
 - Wajib online hanya saat: Device Registration + Manifest Fetch pertama
 
+**Dampak ke Runtime:** Zero breaking change — `CoreImageEditingRuntime` tetap menerima `framePNGPath: String`. Yang berubah hanya source of path (dari manual disk → `AssetCache`).
+
 ---
 
-### 📋 M-012A — Asset Authoring Platform (Authoring Platform)
-**Status: PLANNED — mulai setelah Asset Sync selesai**
+---
 
-> ⚠️ **Perubahan nama dan scope dari sebelumnya.**
-> Bukan lagi "Frame Authoring", tetapi **Asset Authoring** — algoritma yang sama berlaku untuk semua jenis asset.
+# Authoring Track (A-xxx)
 
-**Target user: Tim Desain** (bukan tamu booth)
+> Milestone untuk tim desain — bukan untuk customer.
+> Bergantung pada: I-001 selesai (format asset di Cloud sudah final).
+> Dengan I-001 sudah berjalan, output Authoring langsung kompatibel tanpa mendesain format dua kali.
 
-**Mengapa setelah Asset Sync?**
-Dengan Asset Sync sudah berjalan, format file di Cloud sudah final. M-012A menghasilkan output yang langsung kompatibel — tidak perlu mendesain format dua kali.
+---
 
-**Output: Asset Package (berlaku untuk semua asset type)**
+### 📋 A-001 — Asset Authoring Platform
+**Status: PLANNED — mulai setelah I-001 selesai**
+**Repository: TBD (Authoring tool)**
 
-Contoh untuk Frame:
+Target user: Tim Desain (bukan tamu booth).
+
 ```
-{assetId}/
-    ├── frame.png           ← overlay PNG
-    ├── template.json       ← slot coordinates (auto-generated)
-    ├── thumbnail.webp      ← untuk picker UI
-    ├── preview.jpg         ← full preview
-    └── asset-manifest.json ← metadata (id, version, checksum, category)
+Upload file aset (PNG transparan, LUT file, dll.)
+    ↓
+AssetSlotDetector (auto-detect slot dari alpha channel)
+    BFS + PCA algorithm — porting dari legacy web
+    ↓
+Visual Preview + Fine-tune (drag-drop slot editor)
+    ↓
+AssetPackageWriter (generate package + checksum)
+    ↓
+Publish ke HaiBackend (POST /v1/assets)
+    ↓
+Asset tersedia di Asset library Mission Control
+    ↓
+Operator assign ke Manifest per Event
 ```
 
 **Prinsip:**
 > "Designer cukup membuat PNG transparan. Selesai. Sisanya pekerjaan sistem."
 
+**Algoritma yang sama berlaku untuk semua jenis asset:**
+- Frame (PNG dengan alpha slot)
+- Overlay / Sticker / Border / Watermark
+- Filter (LUT)
+- Branding (logo, backdrop)
+- Future asset types
+
 **Deliverable:**
-- `AssetSlotDetector` — BFS + PCA scan alpha=0 (porting dari legacy algorithm)
-- `AssetPackageWriter` — generate folder package + asset-manifest.json
+- `AssetSlotDetector` — BFS scan alpha=0, output `[SlotCoordinate]`
+- `AssetPackageWriter` — generate seluruh package + `asset-manifest.json`
 - `AssetAuthoringService` — orchestrator workflow
-- Visual Review UI: upload → preview slot → fine-tune → publish ke HaiBackend
-
-**Dampak ke Runtime:**
-- Zero engine change — `CoreImageEditingRuntime` tetap menerima `framePNGPath: String`
-- Yang berubah hanya cara `AssetCache` membaca path
-
-**Dampak ke Event Management:**
-- Asset yang di-publish langsung tersedia di Asset library Mission Control
-- Operator assign ke Manifest per Event — tidak perlu pilih file satu per satu
+- Visual Review UI
 
 ---
 
-### 📋 M-013 — Filter / Editing Experience (Runtime Platform)
-**Status: PLANNED**
-
-LUT Metal filter di atas `RenderedOutput`.
-
-```
-RenderedOutput
-    ↓
-LUT Filter (Metal)
-    ↓
-FilteredOutput
-    ↓
-Payment → Print
-```
-
 ---
 
-### 📋 M-014 — Print Experience (Runtime Platform)
-**Status: PLANNED**
+# Platform Baseline v1.0 — Frozen Components
 
-`PrinterCapability` aktif. `RenderedOutput.fullPath` → AirPrint / DNP thermal.
+File-file berikut **tidak boleh dimodifikasi** kecuali ada bug kritis terdokumentasi:
 
----
-
-### 📋 M-015 — Cloud Delivery (Runtime Platform)
-**Status: PLANNED**
-
-`CloudCapability` aktif. `RenderedOutput` → R2 → QR code.
-
----
-
-### 📋 M-016 — iPhone Camera Node (Runtime Platform)
-**Status: PLANNED**
-
-iPhone sebagai kamera eksternal via P2P. Interface `CapturedPhotoStore` tidak berubah.
-
----
-
-### 📋 M-017 — Runtime Certification
-**Status: PLANNED (setelah M-014 + M-015)**
-
-Full end-to-end certification. `PlatformDiagnosticsService.runAll()` = semua hijau.
-
-```
-✅ Haispace Runtime Platform v1.0 Certified
-```
-
----
-
-### 📋 M-018 — Event Management Platform
-**Status: LONG-TERM PLANNED**
-
-Operator setup event sekali — semua aktif:
-
-```
-Pilih "Wedding Package A"
-    ↓
-Frame Package: wedding-classic/ aktif
-Filter Collection: "Soft Warm" aktif
-Printer: DNP DS-RX1 aktif
-Branding: logo wedding aktif
-Pricing: Rp 65.000/foto aktif
-```
-
-Tidak ada lagi konfigurasi manual per-session.
-
----
-
-## Platform Baseline v1.0 — Frozen Components
-
-| File | Frozen sejak |
-|---|---|
-| `CameraSessionController.swift` | M-010 |
-| `CapturePipeline.swift` | M-010 |
-| `CameraPreviewLayerView.swift` | M-010 |
-| `CameraOrientationCoordinator.swift` | M-010 |
-| `WorkflowOrchestrator.swift` | M-011 |
-| `CapturedPhotoStore.swift` | M-011 |
-| `EditingCapability.swift` | M-012 |
-| `EditingRuntimeProtocol.swift` | M-012 |
+| File | Frozen sejak | Track |
+|---|---|---|
+| `CameraSessionController.swift` | M-010 | Runtime |
+| `CapturePipeline.swift` | M-010 | Runtime |
+| `CameraPreviewLayerView.swift` | M-010 | Runtime |
+| `CameraOrientationCoordinator.swift` | M-010 | Runtime |
+| `WorkflowOrchestrator.swift` | M-011 | Runtime |
+| `CapturedPhotoStore.swift` | M-011 | Runtime |
+| `EditingCapability.swift` | M-012 | Runtime |
+| `EditingRuntimeProtocol.swift` | M-012 | Runtime |
 
 Ref: `docs/platform/PLATFORM_BASELINE_V1.md`
 
 ---
 
-## Kutipan Arsitektural
+# Kutipan Arsitektural
 
 > *"Mulai setelah ini, setiap milestone akan semakin terasa sebagai pembangunan produk, bukan lagi pembuktian arsitektur."*
 > — Chief Product Architect, setelah M-011
 
-> *"Haispace sekarang terbagi menjadi dua produk yang berbeda: Runtime Platform dan Authoring Platform. Dulu keduanya bercampur. Sekarang kita punya kesempatan memisahkannya."*
-> — Chief Product Architect, setelah Product Archaeology M-012
+> *"Cloud stores facts. Runtime executes behavior."*
+> — Platform DNA, dikodifikasi di `haispace-platform/cloud/CLOUD_CONTRACT.md`
 
-> *"Di masa depan kita tidak lagi berbicara tentang 'upload PNG', tetapi mengelola Frame Package, yang jauh lebih siap untuk berkembang menjadi platform berskala besar."*
+> *"Asset Sync bukan milik Runtime. Asset Sync adalah implementasi Cloud Platform."*
+> — Chief Product Architect, 2026-08-02
+
+> *"Haispace bukan lagi satu aplikasi, melainkan satu platform yang terdiri dari beberapa produk. Roadmap kita juga harus mencerminkan struktur tersebut."*
 > — Chief Product Architect, 2026-08-02
