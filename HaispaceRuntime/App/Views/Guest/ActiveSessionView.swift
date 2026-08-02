@@ -315,7 +315,7 @@ struct ActiveSessionView: View {
                                     }
                                     
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                                        if self.activeSelectedPhotoForPreview?.id == photoId && s.stage == .capturing {
+                                        if self.activeSelectedPhotoForPreview?.id == photoId && s.status == .active {
                                             withAnimation(.easeOut(duration: 0.3)) {
                                                 self.activeSelectedPhotoForPreview = nil
                                             }
