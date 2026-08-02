@@ -64,7 +64,12 @@ public struct CameraPreviewLayerView: UIViewRepresentable {
             
             // Phase 6B: Enforce explicit mirroring for front camera consistency
             if connection.isVideoMirroringSupported {
-                connection.isVideoMirrored = true
+                if connection.automaticallyAdjustsVideoMirroring {
+                    connection.automaticallyAdjustsVideoMirroring = false
+                }
+                if connection.isVideoMirrored != true {
+                    connection.isVideoMirrored = true
+                }
             }
             let isMirrored = connection.isVideoMirrored
             
