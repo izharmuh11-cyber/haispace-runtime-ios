@@ -15,6 +15,9 @@ public actor CapturePipeline: NSObject, AVCapturePhotoCaptureDelegate {
     }
     
     public func attach(to session: AVCaptureSession) throws {
+        session.beginConfiguration()
+        defer { session.commitConfiguration() }
+        
         if session.canAddOutput(photoOutput) {
             session.addOutput(photoOutput)
         } else {

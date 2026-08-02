@@ -24,6 +24,9 @@ public actor PreviewPipeline: NSObject, AVCaptureVideoDataOutputSampleBufferDele
     }
     
     public func attach(to session: AVCaptureSession) throws {
+        session.beginConfiguration()
+        defer { session.commitConfiguration() }
+        
         if session.canAddOutput(videoOutput) {
             session.addOutput(videoOutput)
             // Fix orientation if needed (assuming portrait for iPad kiosk)
