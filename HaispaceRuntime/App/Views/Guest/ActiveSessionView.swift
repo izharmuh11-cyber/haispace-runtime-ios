@@ -117,7 +117,6 @@ struct ActiveSessionView: View {
             
             startSessionSequence()
             startGestureListener()
-            startCameraIfNeeded()
             
             // Set Vision AI callback
             StreamingDecoderService.shared.onFrameAnalyzed = { count, category, zoom, _ in
@@ -159,28 +158,6 @@ struct ActiveSessionView: View {
     }
     
     // MARK: - Logic
-
-    // M-010: Start camera session if not already running
-    private func startCameraIfNeeded() {
-        Task {
-            let status = AVFoundation.AVCaptureDevice.authorizationStatus(for: .video)
-            if status == .authorized || status == .notDetermined {
-                if status == .notDetermined {
-                    _ = await AVFoundation.AVCaptureDevice.requestAccess(for: .video)
-                }
-                do {
-                    let config = CameraConfiguration(frameRate: 30)
-                    try await CameraCapabilityService.shared.prepare(configuration: config)
-                    let sessionId = SessionID(rawValue: UUID().uuidString)
-                    try await CameraCapabilityService.shared.startSession(sessionId: sessionId)
-                } catch {
-                    await RuntimeTimelineLogger.shared.logEvent(
-                        "CAMERA START FAILED", payload: error.localizedDescription
-                    )
-                }
-            }
-        }
-    }
 
     private func formatTime(_ seconds: Int) -> String {
         let m = seconds / 60

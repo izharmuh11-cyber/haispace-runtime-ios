@@ -22,4 +22,4 @@ def check_braces(filepath):
     else:
         print("Braces are balanced.")
 
-check_braces(r'c:\Users\Izhar\Documents\Extention\HaispaceProject\haispace-runtime-ios\HaispaceRuntime\App\Views\Guest\ActiveSessionView.swift')
+check_braces(r'c:\Users\Izhar\Documents\Extention\HaispaceProject\haispace-runtime-ios\HaispaceRuntime\App\Views\Guest\FrameSelectionView.swift')

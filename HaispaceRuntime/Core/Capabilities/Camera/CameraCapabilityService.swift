@@ -39,6 +39,13 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
     public func prepare(configuration: CameraConfiguration) async throws {
         await RuntimeTimelineLogger.shared.logEvent("CAMERA PREPARE", payload: "FPS: \(configuration.frameRate)")
         
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        if status == .notDetermined {
+            _ = await AVCaptureDevice.requestAccess(for: .video)
+        } else if status == .denied || status == .restricted {
+            throw CameraError.deviceUnavailable
+        }
+        
         try await controller.configure(frameRate: configuration.frameRate)
         try await previewPipeline.attach(to: controller.captureSession)
         try await capturePipeline.attach(to: controller.captureSession)
