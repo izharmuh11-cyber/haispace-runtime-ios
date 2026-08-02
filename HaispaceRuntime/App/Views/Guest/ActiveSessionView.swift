@@ -1213,7 +1213,6 @@ struct ActiveSessionView: View {
         }
     }
 }
-}
 
 // MARK: - Corner Brackets Shape
 struct CornerBracketsShape: Shape {
