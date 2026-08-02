@@ -64,7 +64,7 @@ struct PhotoSelectionView: View {
                             appState.navigateTo(.frameSelection)
                         }
                     }) {
-                        Text("Lanjut ke Bingkai \u2192")
+                        Text("Lanjut ke Bingkai \u{2192}")
                             .font(.system(size: 20, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(.vertical, 16)
