@@ -18,6 +18,46 @@
   (di booth)         (tim desain)         (operator/admin)
 ```
 
+## DNA Platform
+
+> **"Cloud stores facts. Runtime executes behavior."**
+
+Artinya alur asset **bukan** upload langsung ke iPad:
+
+```
+Mission Control
+        │
+        ▼
+      Event
+        │
+        ▼
+    Manifest
+        │
+   ┌────┼──────┬──────────┬──────────┐
+   ▼    ▼      ▼          ▼          ▼
+Frame Filter  Logo   Printer   Booth
+Asset  Asset  Asset   Config   Config
+        │
+        ▼
+      Cloud (CDN)
+        │
+        ▼
+   Booth (iPad)
+   ├── Download Manifest
+   ├── Download Assets
+   ├── Cache lokal
+   └── Runtime (offline-capable)
+```
+
+**Event adalah pusat semuanya.** Operator cukup melakukan `Sync Event` — semua asset aktif otomatis.
+
+**Frame hanyalah salah satu jenis Asset.** Algoritma yang sama berlaku untuk:
+- Frame
+- Overlay / Sticker / Border / Watermark  
+- Filter (LUT)
+- Music / Soundtrack
+- Branding (logo, backdrop)
+
 ---
 
 ## 1. Runtime Platform
@@ -44,32 +84,37 @@ Milestone: M-010 → M-012 → M-013 → M-014 → M-015 → M-016 → M-017
 
 ## 2. Authoring Platform
 
-**Dipakai tim desain untuk membuat Frame Package. Target: Internal.**
+**Dipakai tim desain untuk membuat Asset. Target: Internal.**
 
 ```
-Upload PNG transparan
+Upload file aset (PNG, LUT, dll.)
     ↓
-FrameSlotDetector (auto-detect)
+AssetDetector (auto-detect slot / metadata)
     ↓
 Visual Preview + Fine-tune
     ↓
-Generate Frame Package
+Generate Asset Package
     ↓
-Publish ke CDN
+Publish ke Cloud → masuk Asset library
+    ↓
+Dipakai dalam Manifest per Event
 ```
 
-Milestone: M-012A
+Milestone: M-012A (Asset Authoring Platform)
 
-**Output:** `Frame Package` (bukan hanya PNG)
+**Output:** `Asset Package` (self-contained per asset type)
 
+Contoh untuk Frame:
 ```
 wedding-classic/
     ├── frame.png           ← overlay PNG (alpha channel)
     ├── template.json       ← slot coordinates (auto-generated)
     ├── thumbnail.webp      ← preview kecil untuk UI picker
     ├── preview.jpg         ← full preview dengan foto contoh
-    └── manifest.json       ← metadata package
+    └── manifest.json       ← metadata (id, version, category, checksum)
 ```
+
+Algoritma yang sama berlaku untuk asset lain (overlay, sticker, border, watermark).
 
 ---
 
@@ -126,7 +171,9 @@ Platform Freeze v1.0 aktif:
 ### 🔄 M-012 — Frame Engine (Runtime Platform)
 **Status: Engineering Complete — Waiting for Production Frame Assets & Device Validation**
 
-Scope: Frame Engine yang merender. Tidak lebih.
+Scope: Frame Engine yang merender dari local file. Tidak lebih.
+
+> **Catatan penting:** M-012 menggunakan frame dari local disk (manual drop). Asset Sync dari Cloud akan diimplementasikan setelah M-012 selesai, sehingga format asset di M-012A langsung mengikuti format yang benar-benar dipakai Cloud.
 
 **Definition of Done (12 kriteria):**
 
@@ -152,52 +199,86 @@ Scope: Frame Engine yang merender. Tidak lebih.
 
 ---
 
-### 📋 M-012A — Frame Authoring Platform (Authoring Platform)
+### 📋 Asset Sync — Runtime Platform (baru, antara M-012 dan M-012A)
 **Status: PLANNED — mulai setelah M-012 ditutup**
+
+**Mengapa harus sebelum M-012A?**
+
+M-012A menghasilkan Asset Package yang akan di-publish ke Cloud. Tapi jika Runtime belum bisa membaca Manifest dari Cloud, format asset di M-012A tidak akan diketahui harus seperti apa. Dengan mengimplementasikan Asset Sync lebih dulu, format yang dihasilkan M-012A langsung cocok dengan yang sudah berjalan di production.
+
+**Yang dibangun:**
+
+```
+Runtime (HaiBooth)
+    ├── ManifestService     ← GET /manifest?booth={boothId}
+    ├── AssetDownloader     ← Download asset yang berubah versi/checksum
+    ├── AssetCache          ← ~/Library/Caches/HaispaceAssets/{assetId}/
+    └── ManifestVersionPin  ← Session aktif tidak dapat manifest baru
+```
+
+**Sync flow:**
+```
+App Launch / setiap 1 jam
+    ↓
+ManifestService.fetchLatest(boothId)
+    ↓
+Bandingkan assetRefs vs lokal cache (by checksum)
+    ↓
+AssetDownloader.download(diff)  ← hanya asset yang berubah
+    ↓
+Simpan ke cache lokal
+    ↓
+CoreImageEditingRuntime baca dari cache
+    ↓
+Session berjalan offline
+```
+
+**Invariant (dari SYNC_STRATEGY.md):**
+- Session yang sedang berjalan TIDAK boleh mendapat manifest baru
+- Manifest baru hanya berlaku untuk session berikutnya
+- Wajib online hanya saat: Device Registration + Manifest Fetch pertama
+
+---
+
+### 📋 M-012A — Asset Authoring Platform (Authoring Platform)
+**Status: PLANNED — mulai setelah Asset Sync selesai**
+
+> ⚠️ **Perubahan nama dan scope dari sebelumnya.**
+> Bukan lagi "Frame Authoring", tetapi **Asset Authoring** — algoritma yang sama berlaku untuk semua jenis asset.
 
 **Target user: Tim Desain** (bukan tamu booth)
 
-**Output utama: Frame Package**
+**Mengapa setelah Asset Sync?**
+Dengan Asset Sync sudah berjalan, format file di Cloud sudah final. M-012A menghasilkan output yang langsung kompatibel — tidak perlu mendesain format dua kali.
 
-```
-{frameId}/
-    ├── frame.png
-    ├── template.json    ← auto-generated oleh FrameSlotDetector
-    ├── thumbnail.webp
-    ├── preview.jpg
-    └── manifest.json
-```
+**Output: Asset Package (berlaku untuk semua asset type)**
 
-`manifest.json`:
-```json
-{
-  "id": "wedding-classic",
-  "name": "Wedding Classic",
-  "version": "1.0.0",
-  "author": "Haispace Design Team",
-  "category": "Wedding",
-  "slotCount": 2,
-  "aspectRatio": "3:4",
-  "tags": ["wedding", "gold", "classic"]
-}
+Contoh untuk Frame:
+```
+{assetId}/
+    ├── frame.png           ← overlay PNG
+    ├── template.json       ← slot coordinates (auto-generated)
+    ├── thumbnail.webp      ← untuk picker UI
+    ├── preview.jpg         ← full preview
+    └── asset-manifest.json ← metadata (id, version, checksum, category)
 ```
 
 **Prinsip:**
 > "Designer cukup membuat PNG transparan. Selesai. Sisanya pekerjaan sistem."
 
 **Deliverable:**
-- `FrameSlotDetector` — BFS scan alpha=0, output slot coordinates
-- `FramePackageWriter` — generate seluruh folder package
-- `FrameAuthoringService` — orchestrator workflow
-- Visual Review UI (platform TBD)
-- CDN publish pipeline
+- `AssetSlotDetector` — BFS + PCA scan alpha=0 (porting dari legacy algorithm)
+- `AssetPackageWriter` — generate folder package + asset-manifest.json
+- `AssetAuthoringService` — orchestrator workflow
+- Visual Review UI: upload → preview slot → fine-tune → publish ke HaiBackend
 
 **Dampak ke Runtime:**
-- `CoreImageEditingRuntime` membaca `manifest.json` + `template.json` — **tanpa perubahan engine**
-- `PlatformDiagnosticsService` bisa menambah `FramePackageValidator`
+- Zero engine change — `CoreImageEditingRuntime` tetap menerima `framePNGPath: String`
+- Yang berubah hanya cara `AssetCache` membaca path
 
 **Dampak ke Event Management:**
-- Operator memilih Frame Package berdasarkan `manifest.json` — tidak perlu pilih file satu per satu
+- Asset yang di-publish langsung tersedia di Asset library Mission Control
+- Operator assign ke Manifest per Event — tidak perlu pilih file satu per satu
 
 ---
 
