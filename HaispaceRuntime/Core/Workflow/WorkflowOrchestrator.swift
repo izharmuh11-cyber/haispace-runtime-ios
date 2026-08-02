@@ -142,22 +142,40 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
         case .selectTemplate(let frameId):
             guard let sessionId = activeSessionId else { throw WorkflowError.sessionNotActive }
 
-            let editingConfig = EditingConfiguration(frame: FrameReference(frameId: frameId, assetPath: "frames/\(frameId).png"))
+            // M-012 STEP 3: Gunakan path foto aktual dari CapturedPhotoStore
+            // Foto yang dipakai adalah foto pertama yang dipilih tamu (selectedPhotos)
+            let capturedPhotos = await CapturedPhotoStore.shared.capturedPhotos
+            guard let firstPhoto = capturedPhotos.first,
+                  let photoPath = firstPhoto.fullQualityPath ?? firstPhoto.thumbnailPath else {
+                throw WorkflowError.sessionNotActive
+            }
+            
+            // Construct path frame asset dari local storage
+            // Convention: ~/Library/Caches/HaispaceFrames/{frameId}.png
+            let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+            let frameAssetPath = cachesDir.appendingPathComponent("HaispaceFrames/\(frameId).png").path
+            
+            let editingConfig = EditingConfiguration(
+                frame: FrameReference(frameId: frameId, assetPath: frameAssetPath)
+            )
             try await editing.prepare(sessionId: sessionId, configuration: editingConfig)
 
             SessionAuditTrail.append(
                 sessionId: sessionId.rawValue,
                 stage: .exporting,
                 eventType: .templateSelected,
-                metadata: ["frameId": frameId]
+                metadata: ["frameId": frameId, "photoCount": String(capturedPhotos.count)]
             )
             
             self.currentStage = .exporting
 
             let correlationId = currentCorrelationId ?? CorrelationID()
-            let exportResult = try await editing.requestExport(photoInput: "captured_photo.jpg", correlationId: correlationId)
+            // M-012: Export foto pertama dengan frame yang dipilih
+            let exportResult = try await editing.requestExport(photoInput: photoPath, correlationId: correlationId)
             self.activePhotoId = exportResult.photoId
             self.activeOutputReference = exportResult.outputReference
+
+            HaispaceLogger.info("[M-012] Frame export selesai: \(exportResult.outputReference) — \(exportResult.fileSizeBytes / 1024)KB", category: "editing")
 
             // Transition to Payment
             do {

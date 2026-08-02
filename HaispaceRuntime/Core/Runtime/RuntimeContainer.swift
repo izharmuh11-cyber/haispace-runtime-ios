@@ -61,7 +61,7 @@ public final class RuntimeContainer: ObservableObject {
         case .production:
             return try RuntimeContainer(
                 session: try SessionModule.production(),
-                capabilities: CapabilityModule.noOp(), // TODO Phase 3: Real capabilities
+                capabilities: CapabilityModule.production(), // M-012: Frame Engine active
                 infrastructure: InfrastructureModule.production(),
                 observability: ObservabilityModule()
             )

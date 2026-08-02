@@ -113,6 +113,21 @@ public final class CapabilityModule: RuntimeModule, @unchecked Sendable {
             p2p: NoOpP2PCapability()
         )
     }
+    
+    /// M-012: Production capabilities — real Camera + CoreImage Frame Engine.
+    public static func production() -> CapabilityModule {
+        // M-012: CoreImageEditingRuntime sebagai implementasi konkret
+        let coreImageRuntime = CoreImageEditingRuntime()
+        let editingCapability = EditingCapability(runtime: coreImageRuntime)
+        
+        return CapabilityModule(
+            camera: NoOpCameraCapability(),   // Camera di-inject dari CameraCapabilityService (singleton)
+            editing: editingCapability,        // M-012: Frame Engine aktif
+            payment: NoOpPaymentCapability(),
+            delivery: NoOpDeliveryCapability(),
+            p2p: NoOpP2PCapability()
+        )
+    }
 }
 
 // MARK: - InfrastructureModule
