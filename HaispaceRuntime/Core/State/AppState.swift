@@ -74,8 +74,10 @@ final class AppState {
         let minPhotoCount: Int
         let queueNumber: Int
         let guestName: String
+        /// M-011.5: Countdown detik dari SessionTimer via WorkflowOrchestrator
+        let remainingSeconds: Int
         
-        static let empty = SessionContext(maxPhotoCount: 10, minPhotoCount: 3, queueNumber: 1, guestName: "Guest")
+        static let empty = SessionContext(maxPhotoCount: 10, minPhotoCount: 3, queueNumber: 1, guestName: "Guest", remainingSeconds: 0)
     }
     
     /// Snapshot context session aktif — dibaca oleh View untuk package dan guest info.
@@ -142,11 +144,13 @@ final class AppState {
         if let activeSession = await runtime.orchestrator.activeSession {
             let policy = await activeSession.capturePolicy
             let guest = await activeSession.identity.guest
+            let remaining = await runtime.orchestrator.sessionTimerRemaining
             sessionContext = SessionContext(
                 maxPhotoCount: policy.maxCount,
                 minPhotoCount: policy.minSelectionCount,
                 queueNumber: guest.queueNumber,
-                guestName: guest.name
+                guestName: guest.name,
+                remainingSeconds: remaining
             )
         }
 

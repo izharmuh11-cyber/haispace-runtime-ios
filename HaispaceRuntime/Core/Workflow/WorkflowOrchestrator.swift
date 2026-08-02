@@ -43,6 +43,15 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
     // Foto mengalir: P2P → PhotoEvent → CapturedPhotoStore
     private var photoInputListenerTask: Task<Void, Never>?
     private var photoFullQualityListenerTask: Task<Void, Never>?
+    
+    // M-011.5: Runtime Timer Infrastructure
+    // Timer hanya menghitung waktu dan memancarkan event.
+    // Semua keputusan bisnis (timeout, auto-capture) ada di Orchestrator — BUKAN di Timer.
+    private let sessionTimer = SessionTimer()
+    private var sessionTimerTask: Task<Void, Never>?
+    
+    /// Sisa detik dari session timer aktif — dibaca oleh AppState untuk View.
+    private(set) public var sessionTimerRemaining: Int = 0
 
     public var healthSnapshot: WorkflowHealth {
         return WorkflowHealth(
@@ -435,6 +444,63 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
         photoFullQualityListenerTask?.cancel()
         photoFullQualityListenerTask = nil
         HaispaceLogger.info("[M-011] Photo Input listening stopped", category: "workflow")
+    }
+    
+    // MARK: - Session Timer Lifecycle (M-011.5)
+    
+    /// Mulai countdown timer sesi.
+    /// Timer memancarkan TimerEvent \u2014 Orchestrator yang memutuskan respons bisnis.
+    /// - Parameter duration: Durasi dalam detik.
+    func startSessionCountdown(duration: Int) {
+        stopSessionCountdown()
+        sessionTimerRemaining = duration
+        
+        sessionTimerTask = Task { [weak self] in
+            guard let self else { return }
+            for await event in sessionTimer.start(duration: duration) {
+                guard !Task.isCancelled else { break }
+                switch event {
+                case .tick(let remaining):
+                    await MainActor.run {
+                        // Sinkronisasi ke AppState melalui sessionTimerRemaining
+                        // View membaca ini \u2014 Timer tidak tahu siapa yang membaca
+                    }
+                    self.sessionTimerRemaining = remaining
+                    
+                case .finished:
+                    HaispaceLogger.info("[M-011.5] Session timer finished", category: "timer")
+                    // Orchestrator memutuskan apa yang terjadi saat timer habis.
+                    // Untuk sekarang: tidak ada auto-action (operator atau tamu yang trigger).
+                    
+                case .paused(let at):
+                    HaispaceLogger.info("[M-011.5] Timer paused at \(at)s", category: "timer")
+                    
+                case .resumed(let remaining):
+                    HaispaceLogger.info("[M-011.5] Timer resumed, \(remaining)s remaining", category: "timer")
+                }
+            }
+        }
+        
+        HaispaceLogger.info("[M-011.5] Session countdown started: \(duration)s", category: "timer")
+    }
+    
+    /// Hentikan session timer.
+    func stopSessionCountdown() {
+        sessionTimer.stop()
+        sessionTimerTask?.cancel()
+        sessionTimerTask = nil
+        sessionTimerRemaining = 0
+        HaispaceLogger.info("[M-011.5] Session countdown stopped", category: "timer")
+    }
+    
+    /// Pause session timer (misalnya saat operator intervensi).
+    func pauseSessionCountdown() {
+        sessionTimer.pause()
+    }
+    
+    /// Resume session timer.
+    func resumeSessionCountdown() {
+        sessionTimer.resume()
     }
     
     // MARK: - Generic Event Bus Handler (Event-to-Command Table)
