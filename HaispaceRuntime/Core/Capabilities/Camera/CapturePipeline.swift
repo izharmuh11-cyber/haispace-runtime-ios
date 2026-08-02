@@ -37,6 +37,10 @@ public actor CapturePipeline: NSObject, AVCapturePhotoCaptureDelegate {
                 
                 if let connection = self.photoOutput.connection(with: .video) {
                     connection.videoOrientation = orientation
+                    // Phase 6B: Explicitly match Preview mirroring state
+                    if connection.isVideoMirroringSupported {
+                        connection.isVideoMirrored = true
+                    }
                 }
                 await RuntimeTimelineLogger.shared.logEvent("[2] AVCapturePhotoOutput.capturePhoto()")
                 self.photoOutput.capturePhoto(with: settings, delegate: self)

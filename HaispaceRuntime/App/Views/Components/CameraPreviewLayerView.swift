@@ -62,13 +62,19 @@ public struct CameraPreviewLayerView: UIViewRepresentable {
             let newVideoOrientation = CameraOrientationCoordinator.shared.currentVideoOrientation()
             let coordStr = CameraOrientationCoordinator.shared.currentVideoOrientationString()
             
+            // Phase 6B: Enforce explicit mirroring for front camera consistency
+            if connection.isVideoMirroringSupported {
+                connection.isVideoMirrored = true
+            }
+            let isMirrored = connection.isVideoMirrored
+            
             if connection.videoOrientation != newVideoOrientation {
                 connection.videoOrientation = newVideoOrientation
-                printRotationDiagnostic(device: deviceOrientation, interface: interfaceOrientation, connection: newVideoOrientation, coordStr: coordStr)
+                printRotationDiagnostic(device: deviceOrientation, interface: interfaceOrientation, connection: newVideoOrientation, coordStr: coordStr, isMirrored: isMirrored)
             }
         }
         
-        private func printRotationDiagnostic(device: UIDeviceOrientation, interface: UIInterfaceOrientation, connection: AVCaptureVideoOrientation, coordStr: String) {
+        private func printRotationDiagnostic(device: UIDeviceOrientation, interface: UIInterfaceOrientation, connection: AVCaptureVideoOrientation, coordStr: String, isMirrored: Bool) {
             let deviceStr: String
             switch device {
             case .landscapeLeft: deviceStr = "Landscape Left"
@@ -107,6 +113,7 @@ public struct CameraPreviewLayerView: UIViewRepresentable {
             [3] Coordinator: \(coordStr)
             [4] AVCaptureConnection: \(connStr)
             [5] PreviewLayer Bounds: \(boundsStr)
+            [6] Video Mirrored: \(isMirrored)
             """
             
             RuntimeTimelineLogger.shared.logEvent("ROTATION_DIAGNOSTIC", payload: log)
