@@ -46,7 +46,7 @@ struct ActiveSessionView: View {
     @State private var currentPoseIndex: Int = 0
     private let activityTimer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
     
-    // Timer sesi dari SessionStore
+    // M-011 STEP 3B.1: session hanya dipakai untuk countdown timer sementara (STEP 3B.4)
     private var session: SessionStore? {
         appState.currentSession
     }
@@ -156,7 +156,11 @@ struct ActiveSessionView: View {
         }
         .onChange(of: session?.status) { oldStatus, newStatus in
             if newStatus == .photoSelection {
-                appState.navigateTo(.photoSelection)
+                // M-011 STEP 3B.2: navigateTo diganti dengan send(intent:)
+                Task {
+                    try? await appState.send(.triggerShutter) // placeholder — routing sebenarnya melalui WorkflowOrchestrator
+                    appState.navigateTo(.photoSelection) // masih dipakai sementara untuk routing legacy
+                }
             }
         }
     }
@@ -285,7 +289,8 @@ struct ActiveSessionView: View {
                 await RuntimeTimelineLogger.shared.logEvent("[7] Routing to CapturedPhotoStore via PhotoEvent")
                 
                 var currentCount = 0
-                let maxCount = appState.currentSession?.package_.maxPhotoCount ?? 10
+                // M-011 STEP 3B.1: Baca maxPhotoCount dari sessionContext, bukan SessionStore
+                let maxCount = appState.sessionContext.maxPhotoCount
                 
                 await MainActor.run {
                     if let path = CapturedPhotoStore.shared.latestCapturedPhotoPath {
@@ -1012,11 +1017,12 @@ struct ActiveSessionView: View {
                     if let s = session {
                         HStack(spacing: 18) {
                             // Antrian
+                            // M-011 STEP 3B.1: Queue dari sessionContext, bukan SessionStore
                             HStack(spacing: 6) {
                                 Image(systemName: "person.2.fill")
                                     .font(.system(size: 11, weight: .bold))
                                     .foregroundStyle(Color.cyan)
-                                Text("#\(String(format: "%03d", s.guest.queueNumber))")
+                                Text("#\(String(format: "%03d", appState.sessionContext.queueNumber))")
                                     .font(.system(size: 13, weight: .bold, design: .rounded))
                             }
                             
@@ -1052,10 +1058,12 @@ struct ActiveSessionView: View {
                             
                             // Quota — M-011 STEP 2: count dari CapturedPhotoStore
                             HStack(spacing: 6) {
+                            // M-011 STEP 3B.1: maxPhotoCount dari sessionContext
+                            HStack(spacing: 6) {
                                 Image(systemName: "camera.fill")
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color(hex: "#7C5CFC"))
-                                Text("\(CapturedPhotoStore.shared.capturedPhotos.count)/\(s.package_.maxPhotoCount)")
+                                Text("\(CapturedPhotoStore.shared.capturedPhotos.count)/\(appState.sessionContext.maxPhotoCount)")
                                     .font(.system(size: 13, weight: .bold, design: .rounded))
                             }
                         }

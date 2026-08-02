@@ -64,6 +64,22 @@ final class AppState {
 
     /// Orphaned sessions yang ditemukan saat launch — ditangani oleh Recovery Engine (Phase C).
     var orphanedSessionDecisions: [OrphanedSessionDecision] = []
+    
+    // MARK: - Session Context (M-011 STEP 3B.1)
+    // Snapshot ringan dari HaispaceSession.activeSession untuk konsumsi View.
+    // View tidak boleh menyentuh SessionStore atau WorkflowOrchestrator secara langsung.
+    // Di-refresh otomatis setiap kali send() dipanggil.
+    struct SessionContext {
+        let maxPhotoCount: Int
+        let minPhotoCount: Int
+        let queueNumber: Int
+        let guestName: String
+        
+        static let empty = SessionContext(maxPhotoCount: 10, minPhotoCount: 3, queueNumber: 1, guestName: "Guest")
+    }
+    
+    /// Snapshot context session aktif — dibaca oleh View untuk package dan guest info.
+    private(set) var sessionContext: SessionContext = .empty
 
     // MARK: - Computed
 
@@ -121,6 +137,18 @@ final class AppState {
         try await runtime.orchestrator.handleIntent(intent)
         let newStage = await runtime.orchestrator.currentStage
         currentRoute = WorkflowRouteMapper.route(for: newStage)
+        
+        // M-011 STEP 3B.1: Refresh SessionContext dari HaispaceSession actor setiap kali intent diproses
+        if let activeSession = await runtime.orchestrator.activeSession {
+            let policy = await activeSession.capturePolicy
+            let guest = await activeSession.identity.guest
+            sessionContext = SessionContext(
+                maxPhotoCount: policy.maxCount,
+                minPhotoCount: policy.minSelectionCount,
+                queueNumber: guest.queueNumber,
+                guestName: guest.name
+            )
+        }
 
         // Flush domain events ke Publisher setelah setiap intent
         await runtime.flushSessionEvents()

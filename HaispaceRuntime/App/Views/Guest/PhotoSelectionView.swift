@@ -20,7 +20,8 @@ struct PhotoSelectionView: View {
     @State private var focusedPhoto: CapturedPhoto?
     
     private var packageLimit: Int {
-        appState.currentSession?.package_.minPhotoCount ?? 3
+        // M-011 STEP 3B.1: Baca dari sessionContext, bukan SessionStore
+        appState.sessionContext.minPhotoCount
     }
     
     private var photos: [CapturedPhoto] {

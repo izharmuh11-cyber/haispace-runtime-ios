@@ -12,9 +12,8 @@ import SwiftUI
 struct FrameSelectionView: View {
     @Environment(AppState.self) private var appState
 
-    private var session: SessionStore? {
-        appState.currentSession
-    }
+    // M-011 STEP 3B.3: Tidak ada lagi referensi ke SessionStore.
+    // Photo datang dari CapturedPhotoStore. Package info dari sessionContext.
 
     // ID bingkai yang sedang dipilih
     @State private var selectedFrameId: String?
@@ -24,6 +23,11 @@ struct FrameSelectionView: View {
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
     ]
+
+    // M-011 STEP 3B.3: Foto preview dari CapturedPhotoStore.shared, bukan session.photos.selectedPhotos
+    private var previewPhoto: CapturedPhoto? {
+        CapturedPhotoStore.shared.capturedPhotos.first
+    }
 
     var body: some View {
         ZStack {
@@ -43,8 +47,7 @@ struct FrameSelectionView: View {
                 .frame(width: 350, height: 350)
                 .offset(x: 300, y: 200)
 
-            if let session = session {
-                HStack(spacing: 48) {
+            HStack(spacing: 48) {
                     
                     // ==========================================
                     // PANEL KIRI: Live Preview Frame + Photo
@@ -63,8 +66,8 @@ struct FrameSelectionView: View {
                             
                             if let selectedFrame = appState.boothConfig.offlineReadyFrames.first(where: { $0.id == selectedFrameId }) {
                                 ZStack {
-                                    // 1. Foto Tamu (Foto pertama yang dipilih)
-                                    if let firstPhoto = session.photos.selectedPhotos.first {
+                                    // M-011 STEP 3B.3: Baca foto dari CapturedPhotoStore, bukan session.photos
+                                    if let firstPhoto = previewPhoto {
                                         if let image = firstPhoto.displayImage {
                                             Image(uiImage: image)
                                                 .resizable()
@@ -170,7 +173,7 @@ struct FrameSelectionView: View {
                         // Tombol Navigasi Lanjut
                         Button(action: {
                             if let frameId = selectedFrameId {
-                                session.photos.selectedFrameId = frameId
+                                // M-011 STEP 3B.3: Kirim via send(intent:), tidak menulis ke session.photos
                                 Task {
                                     try? await appState.send(.selectTemplate(frameId: frameId))
                                 }
@@ -197,21 +200,10 @@ struct FrameSelectionView: View {
                 .padding(.horizontal, 40)
                 .padding(.vertical, 40)
                 .onAppear {
-                    // Pre-select bingkai pertama jika belum ada yang terpilih
-                    if let current = session.photos.selectedFrameId {
-                        selectedFrameId = current
-                    } else if let firstFrame = appState.boothConfig.offlineReadyFrames.first {
+                    // Pre-select bingkai pertama jika belum ada
+                    if selectedFrameId == nil, let firstFrame = appState.boothConfig.offlineReadyFrames.first {
                         selectedFrameId = firstFrame.id
                     }
-                }
-            } else {
-                VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.largeTitle)
-                        .foregroundStyle(.red)
-                    Text("Error: Sesi aktif tidak terdeteksi")
-                        .font(.title2.bold())
-                        .foregroundStyle(.white)
                 }
             }
         }
