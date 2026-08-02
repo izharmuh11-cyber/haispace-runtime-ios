@@ -242,8 +242,12 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             let filterRef = FilterReference(filterId: filterId, lutFileName: "luts/\(filterId).cube")
             _ = EditingConfiguration(filter: filterRef)
             
-            // Re-render Preview
-            _ = try await editing.requestPreview(photoInput: "captured_photo.jpg", correlationId: correlationId)
+            // M-012.5 Audit: Gunakan PhotoReference — sama seperti selectTemplate
+            let previewPhotos = await CapturedPhotoStore.shared.capturedPhotos
+            if let firstPhoto = previewPhotos.first,
+               let previewPath = firstPhoto.fullQualityPath ?? firstPhoto.thumbnailPath {
+                _ = try await editing.requestPreview(photoInput: previewPath, correlationId: correlationId)
+            }
             
         case .acceptPreview:
             guard currentStage == .editingPreview,
@@ -251,8 +255,14 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                   let correlationId = currentCorrelationId else { return }
             self.currentStage = .exporting
 
-            // Render Export Full Resolution
-            let exportResult = try await editing.requestExport(photoInput: "captured_photo.jpg", correlationId: correlationId)
+            // M-012.5 Audit: Gunakan PhotoReference — tidak ada lagi hardcoded path
+            let exportPhotos = await CapturedPhotoStore.shared.capturedPhotos
+            guard let firstPhoto = exportPhotos.first,
+                  let exportPhotoPath = firstPhoto.fullQualityPath ?? firstPhoto.thumbnailPath else {
+                throw WorkflowError.sessionNotActive
+            }
+            let exportPhotoRef = PhotoReference(photoId: PhotoID(rawValue: firstPhoto.id), sourcePath: exportPhotoPath)
+            let exportResult = try await editing.requestExport(photoInput: exportPhotoRef.sourcePath, correlationId: correlationId)
             self.activePhotoId = exportResult.photoId
             self.activeOutputReference = exportResult.outputReference
 
