@@ -10,10 +10,6 @@ public actor CapturePipeline: NSObject, AVCapturePhotoCaptureDelegate {
     private let photoOutput = AVCapturePhotoOutput()
     private var activeContinuations: [Int64: CheckedContinuation<String, Error>] = [:]
     
-    public override init() {
-        super.init()
-    }
-    
     public func attach(to session: AVCaptureSession) throws {
         session.beginConfiguration()
         defer { session.commitConfiguration() }
