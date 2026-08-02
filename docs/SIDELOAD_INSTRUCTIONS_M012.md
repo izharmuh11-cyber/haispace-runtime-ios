@@ -4,19 +4,20 @@ M-012 Frame Engine telah mengadopsi standar **Asset Package v1** (menggunakan `t
 Karena fitur sinkronisasi dari Cloud (I-001) belum dibangun, Anda perlu men-*sideload* aset dummy secara manual ke dalam iPad / Simulator untuk melakukan validasi.
 
 ## 1. Lokasi Dummy Assets
-Skrip telah men-generate 3 folder *mock* yang mensimulasikan ekstraksi dari file `.hspasset`:
-- `haispace-runtime-ios/docs/dummy_assets/mock-single` (1 slot)
-- `haispace-runtime-ios/docs/dummy_assets/mock-strip` (3 slot vertikal)
-- `haispace-runtime-ios/docs/dummy_assets/mock-grid` (4 slot grid)
+Skrip telah men-generate 3 buah file arsip sesuai format distribusi akhir Haispace (`.hspasset` yang merupakan file ZIP):
+- `haispace-runtime-ios/docs/dummy_assets/mock-single.hspasset` (1 slot)
+- `haispace-runtime-ios/docs/dummy_assets/mock-strip.hspasset` (3 slot vertikal)
+- `haispace-runtime-ios/docs/dummy_assets/mock-grid.hspasset` (4 slot grid)
 
 ## 2. Cara Sideload ke iPad / Simulator
 
-Anda bebas meletakkan folder tersebut di lokasi yang bisa dijangkau oleh `CoreImageEditingRuntime`.
-Rekomendasi untuk pengetesan:
-1. Pindahkan ketiga folder tersebut ke dalam direktori Documents aplikasi (melalui Finder/Files app) atau masukkan ke dalam *App Bundle* untuk sementara.
-2. Pastikan `EditingConfiguration.frame.assetPath` menunjuk ke path **folder** tersebut secara langsung. 
+Karena I-001 (Asset Sync) belum diimplementasi, aplikasi saat ini belum memiliki kapabilitas ekstraksi `.hspasset` (ZIP) secara internal. Oleh karena itu, kita memanfaatkan aplikasi *Files* bawaan iOS:
+1. Pindahkan ketiga file `.hspasset` tersebut ke dalam iPad Anda (melalui AirDrop atau iCloud Drive).
+2. Buka aplikasi **Files** di iPad, lalu **tap (sentuh) file `.hspasset`** tersebut. iOS secara native akan mengekstrak file ZIP tersebut menjadi folder (misal: folder `mock-single`).
+3. Pindahkan folder hasil ekstraksi tersebut ke dalam direktori aplikasi (Documents) tempat `CoreImageEditingRuntime` membaca aset.
+4. Pastikan parameter `EditingConfiguration.frame.assetPath` menunjuk ke path **folder** hasil ekstraksi tersebut. 
    *(Contoh: `.../Documents/mock-strip`)*
-3. Runtime otomatis akan mencari `template.json` dan `frame.png` di dalam folder tersebut.
+5. Runtime otomatis akan mencari `template.json` dan `frame.png` di dalam folder tersebut.
 
 ## 3. Langkah Validasi
 

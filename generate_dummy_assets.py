@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 from PIL import Image, ImageDraw
 
 def create_package(name, slots, width, height):
@@ -57,7 +58,15 @@ def create_package(name, slots, width, height):
     thumb = img.resize((256, int(256 * height / width)))
     thumb.save(os.path.join(base_dir, 'thumbnail.webp'), format="WEBP")
     
-    print(f"Generated {name} in {base_dir}")
+    # Zip the contents into .hspasset
+    zip_path = os.path.join(os.path.dirname(__file__), 'docs', 'dummy_assets', name)
+    shutil.make_archive(zip_path, 'zip', base_dir)
+    os.rename(f"{zip_path}.zip", f"{zip_path}.hspasset")
+    
+    # Clean up the unzipped folder
+    shutil.rmtree(base_dir)
+    
+    print(f"Generated {name}.hspasset in docs/dummy_assets/")
 
 # 1. Single Frame (1200x1800)
 create_package("mock-single", [
