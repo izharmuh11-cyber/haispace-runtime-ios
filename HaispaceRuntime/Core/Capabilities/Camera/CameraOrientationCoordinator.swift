@@ -18,9 +18,12 @@ public actor CameraOrientationCoordinator {
     /// so that kiosks or external cameras can inject custom orientation providers.
     @MainActor
     public func currentVideoOrientation() -> AVCaptureVideoOrientation {
-        let deviceOrientation = UIDevice.current.orientation
+        // Phase 6A.2: Use UIWindowScene as the source of truth, not physical device gyroscope.
+        // This ensures the camera perfectly aligns with however the UI is being rendered.
+        let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+        let interfaceOrientation = scene?.interfaceOrientation ?? .landscapeRight
         
-        switch deviceOrientation {
+        switch interfaceOrientation {
         case .portrait:
             return .portrait
         case .portraitUpsideDown:
