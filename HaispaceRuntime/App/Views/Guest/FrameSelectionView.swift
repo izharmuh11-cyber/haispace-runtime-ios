@@ -208,7 +208,6 @@ struct FrameSelectionView: View {
             }
         }
     }
-}
 
 // MARK: - Frame Grid Item Component
 
