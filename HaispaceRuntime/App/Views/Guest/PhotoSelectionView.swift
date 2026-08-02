@@ -2,7 +2,9 @@
 // HaispaceRuntime — App/Views/Guest
 //
 // Layar di mana tamu memilih hasil foto terbaik dari sesi.
-// Menggunakan PhotoStore dari SessionStore.
+//
+// M-011 STEP 2: Foto dibaca dari CapturedPhotoStore, bukan SessionStore.photos.
+// CapturedPhotoStore adalah satu-satunya sumber kebenaran untuk data foto.
 //
 // Ref: docs/design/04_ui_design.md — Grid Seleksi Foto
 
@@ -11,106 +13,106 @@ import SwiftUI
 struct PhotoSelectionView: View {
     @Environment(AppState.self) private var appState
     
-    private var session: SessionStore? {
-        appState.currentSession
-    }
+    // M-011 STEP 2: State seleksi dikelola lokal \u2014 akan dipindahkan ke WorkflowOrchestrator di STEP 3
+    @State private var selectedPhotoIds: Set<String> = []
     
     // Foto yang difokuskan saat di-tap (popup modal)
     @State private var focusedPhoto: CapturedPhoto?
+    
+    private var packageLimit: Int {
+        appState.currentSession?.package_.minPhotoCount ?? 3
+    }
+    
+    private var photos: [CapturedPhoto] {
+        CapturedPhotoStore.shared.capturedPhotos
+    }
+    
+    private var selectedCount: Int { selectedPhotoIds.count }
+    private var remaining: Int { packageLimit - selectedCount }
     
     var body: some View {
         ZStack {
             Color(hex: "#080810").ignoresSafeArea()
             
-            if let session = session {
-                let packageLimit = session.package_.minPhotoCount
-                let selectedCount = session.photos.selectedPhotoIds.count
-                let remaining = packageLimit - selectedCount
-                
-                VStack(spacing: 24) {
-                    // Header
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Pilih Foto Terbaikmu")
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
-                            
-                            if remaining > 0 {
-                                Text("Pilih \(remaining) foto lagi")
-                                    .font(.title3)
-                                    .foregroundStyle(Color(hex: "#F5A623"))
-                            } else {
-                                Text("Pemilihan Selesai!")
-                                    .font(.title3)
-                                    .foregroundStyle(Color(hex: "#00D9A0"))
-                            }
-                        }
+            VStack(spacing: 24) {
+                // Header
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Pilih Foto Terbaikmu")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
                         
-                        Spacer()
-                        
-                        // Button Lanjut
-                        Button(action: {
-                            withAnimation(.spring) {
-                                session.proceedToFrameSelection()
-                                appState.navigateTo(.frameSelection)
-                            }
-                        }) {
-                            Text("Lanjut ke Bingkai →")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.vertical, 16)
-                                .padding(.horizontal, 32)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(remaining <= 0 ? Color(hex: "#7C5CFC") : Color.white.opacity(0.1))
-                                )
-                                .shadow(color: remaining <= 0 ? Color(hex: "#7C5CFC").opacity(0.4) : .clear, radius: 10)
+                        if remaining > 0 {
+                            Text("Pilih \(remaining) foto lagi")
+                                .font(.title3)
+                                .foregroundStyle(Color(hex: "#F5A623"))
+                        } else {
+                            Text("Pemilihan Selesai!")
+                                .font(.title3)
+                                .foregroundStyle(Color(hex: "#00D9A0"))
                         }
-                        .disabled(remaining > 0)
                     }
-                    .padding(.horizontal, 40)
-                    .padding(.top, 40)
-                    
-                    // Grid Foto (Horizontal Scroll, 2 baris)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHGrid(rows: [GridItem(.fixed(260), spacing: 20), GridItem(.fixed(260), spacing: 20)], spacing: 20) {
-                            ForEach(session.photos.capturedPhotos) { photo in
-                                PhotoGridItem(
-                                    photo: photo,
-                                    isSelected: session.photos.selectedPhotoIds.contains(photo.id)
-                                ) {
-                                    // Toggle selection
-                                    session.photos.toggleSelection(photoId: photo.id, limit: packageLimit)
-                                } onLongPress: {
-                                    // Focus view
-                                    withAnimation(.spring) {
-                                        focusedPhoto = photo
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 40)
-                    }
-                    .frame(maxHeight: 560)
                     
                     Spacer()
                     
-                    // Indikator P2P Transfer Status (Jika ada foto yang masih loading full quality)
-                    if session.photos.hasPendingTransfers {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                                .tint(.white)
-                            Text("Mentransfer foto resolusi tinggi...")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.7))
+                    // Button Lanjut
+                    Button(action: {
+                        withAnimation(.spring) {
+                            appState.currentSession?.proceedToFrameSelection()
+                            appState.navigateTo(.frameSelection)
                         }
-                        .padding(.bottom, 20)
-                        .transition(.opacity)
+                    }) {
+                        Text("Lanjut ke Bingkai \u2192")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 32)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(remaining <= 0 ? Color(hex: "#7C5CFC") : Color.white.opacity(0.1))
+                            )
+                            .shadow(color: remaining <= 0 ? Color(hex: "#7C5CFC").opacity(0.4) : .clear, radius: 10)
                     }
+                    .disabled(remaining > 0)
                 }
-            } else {
-                Text("Error: Tidak ada sesi aktif")
-                    .foregroundStyle(.white)
+                .padding(.horizontal, 40)
+                .padding(.top, 40)
+                
+                // Grid Foto (Horizontal Scroll, 2 baris)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHGrid(rows: [GridItem(.fixed(260), spacing: 20), GridItem(.fixed(260), spacing: 20)], spacing: 20) {
+                        // M-011 STEP 2: sumber data = CapturedPhotoStore
+                        ForEach(photos) { photo in
+                            PhotoGridItem(
+                                photo: photo,
+                                isSelected: selectedPhotoIds.contains(photo.id)
+                            ) {
+                                toggleSelection(photoId: photo.id)
+                            } onLongPress: {
+                                withAnimation(.spring) {
+                                    focusedPhoto = photo
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 40)
+                }
+                .frame(maxHeight: 560)
+                
+                Spacer()
+                
+                // Indikator P2P Transfer Status
+                if photos.contains(where: { !$0.isFullQuality }) {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                            .tint(.white)
+                        Text("Mentransfer foto resolusi tinggi...")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                    .padding(.bottom, 20)
+                    .transition(.opacity)
+                }
             }
             
             // Popup Focus View
@@ -157,6 +159,16 @@ struct PhotoSelectionView: View {
                 }
                 .zIndex(100)
             }
+        }
+    }
+    
+    // MARK: - Selection Logic (lokal sementara \u2014 STEP 3 akan pindahkan ke WorkflowOrchestrator)
+    
+    private func toggleSelection(photoId: String) {
+        if selectedPhotoIds.contains(photoId) {
+            selectedPhotoIds.remove(photoId)
+        } else if selectedPhotoIds.count < packageLimit {
+            selectedPhotoIds.insert(photoId)
         }
     }
 }

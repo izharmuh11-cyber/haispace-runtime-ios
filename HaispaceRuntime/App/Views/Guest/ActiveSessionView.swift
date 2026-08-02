@@ -280,74 +280,66 @@ struct ActiveSessionView: View {
             do {
                 try await CameraCapabilityService.shared.requestCapture(correlationId: correlationId)
                 
-                // TEMPORARY COMPATIBILITY BRIDGE
-                //
-                // M-010:
-                // Bridge CameraCapability -> Legacy SessionStore
-                //
-                // Remove after M-013 when SessionStore is fully retired.
-                await RuntimeTimelineLogger.shared.logEvent("[7] SessionStore Bridge Injected")
+                // M-011 STEP 2: Route ke CapturedPhotoStore via PhotoEvent.
+                // SessionStore tidak lagi terlibat dalam alur foto.
+                await RuntimeTimelineLogger.shared.logEvent("[7] Routing to CapturedPhotoStore via PhotoEvent")
                 
                 var currentCount = 0
-                var maxCount = 0
+                let maxCount = appState.currentSession?.package_.maxPhotoCount ?? 10
                 
                 await MainActor.run {
                     if let path = CapturedPhotoStore.shared.latestCapturedPhotoPath {
                         do {
                             let data = try Data(contentsOf: URL(fileURLWithPath: path))
-                            
                             let photoId = UUID().uuidString
-                            let currentOrder = sortOrder ?? (appState.currentSession?.photos.capturedCount ?? 0)
+                            let currentOrder = sortOrder ?? CapturedPhotoStore.shared.capturedPhotos.count
                             
-                            let thumbnail = PhotoThumbnail(photoId: photoId, data: data, capturedAt: Date(), sortOrder: currentOrder)
+                            // M-011: Kirim via PhotoEvent — Store tidak tahu sumbernya dari mana
+                            CapturedPhotoStore.shared.receivePhotoEvent(
+                                .thumbnailArrived(
+                                    photoId: photoId,
+                                    data: data,
+                                    capturedAt: Date(),
+                                    sortOrder: currentOrder
+                                )
+                            )
+                            CapturedPhotoStore.shared.receivePhotoEvent(
+                                .fullQualityArrived(photoId: photoId, fullData: data)
+                            )
+                            RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
                             
-                            if let s = appState.currentSession {
-                                RuntimeTimelineLogger.shared.logEvent("CURRENT SESSION FOUND", payload: "sessionId = \(s.sessionId)")
-                                // Inject ke Legacy SessionStore agar muncul di filmstrip
-                                s.photos.receiveThumbnail(thumbnail)
-                                s.photos.upgradeToFullQuality(photoId: photoId, fullData: data)
-                                RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
-                                
-                                // Phase 5: Show Preview Card UX
-                                if let newlyAdded = s.photos.capturedPhotos.first(where: { $0.id == photoId }) {
-                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                        self.activeSelectedPhotoForPreview = newlyAdded
-                                    }
-                                    
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                                        if self.activeSelectedPhotoForPreview?.id == photoId && s.status == .active {
-                                            withAnimation(.easeOut(duration: 0.3)) {
-                                                self.activeSelectedPhotoForPreview = nil
-                                            }
+                            // Show Preview Card UX
+                            if let newlyAdded = CapturedPhotoStore.shared.capturedPhotos.first(where: { $0.id == photoId }) {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                    self.activeSelectedPhotoForPreview = newlyAdded
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                                    if self.activeSelectedPhotoForPreview?.id == photoId {
+                                        withAnimation(.easeOut(duration: 0.3)) {
+                                            self.activeSelectedPhotoForPreview = nil
                                         }
                                     }
                                 }
-                                
-                                currentCount = s.photos.capturedCount
-                                maxCount = s.package_.maxPhotoCount
-                                
-                                if currentCount >= maxCount {
-                                    // Pindah ke layar Preview / Pemilihan Foto
-                                    RuntimeTimelineLogger.shared.logEvent("PHOTO SELECTION ROUTE ACTIVATED")
-                                    s.proceedToPhotoSelection()
-                                }
-                            } else {
-                                RuntimeTimelineLogger.shared.logEvent("BRIDGE ERROR: currentSession is nil!")
+                            }
+                            
+                            currentCount = CapturedPhotoStore.shared.capturedPhotos.count
+                            
+                            if currentCount >= maxCount {
+                                RuntimeTimelineLogger.shared.logEvent("PHOTO SELECTION ROUTE ACTIVATED")
+                                // Notify SessionStore untuk transisi (masih diperlukan untuk routing sementara)
+                                appState.currentSession?.proceedToPhotoSelection()
                             }
                         } catch {
-                            RuntimeTimelineLogger.shared.logEvent("BRIDGE ERROR: Data load failed - \(error.localizedDescription)")
+                            RuntimeTimelineLogger.shared.logEvent("CAPTURE ERROR: Data load failed - \(error.localizedDescription)")
                         }
                     } else {
-                        RuntimeTimelineLogger.shared.logEvent("BRIDGE ERROR: latestCapturedPhotoPath is nil!")
+                        RuntimeTimelineLogger.shared.logEvent("CAPTURE ERROR: latestCapturedPhotoPath is nil!")
                     }
                 }
                 
-                await RuntimeTimelineLogger.shared.logEvent("[8] UI Received (Thumbnail added)")
-                if maxCount > 0 {
-                    await RuntimeTimelineLogger.shared.logEvent("PHOTO COUNT \(currentCount)/\(maxCount)")
-                }
+                await RuntimeTimelineLogger.shared.logEvent("[8] UI Received (Photo added to CapturedPhotoStore)")
+                await RuntimeTimelineLogger.shared.logEvent("PHOTO COUNT \(currentCount)/\(maxCount)")
             } catch {
-                // Non-fatal: log and continue so session doesn't crash
                 await RuntimeTimelineLogger.shared.logEvent(
                     "CAPTURE FAILED",
                     payload: "\(error.localizedDescription)"
@@ -959,44 +951,43 @@ struct ActiveSessionView: View {
             VStack(spacing: 12) {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 18) {
-                        if let s = session {
-                            ForEach(Array(s.photos.capturedPhotos.enumerated()), id: \.element.id) { index, photo in
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                        activeSelectedPhotoForPreview = photo
-                                    }
-                                }) {
-                                    if let uiImage = UIImage(data: photo.thumbnailData) {
-                                        let isLandscape = uiImage.size.width > uiImage.size.height
-                                        let thumbWidth: CGFloat = isLandscape ? 104 : 80
-                                        let thumbHeight: CGFloat = isLandscape ? 78 : 104
+                        // M-011 STEP 2: FilmStrip baca dari CapturedPhotoStore bukan SessionStore
+                        ForEach(Array(CapturedPhotoStore.shared.capturedPhotos.enumerated()), id: \.element.id) { index, photo in
+                            Button(action: {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    activeSelectedPhotoForPreview = photo
+                                }
+                            }) {
+                                if let uiImage = UIImage(data: photo.thumbnailData) {
+                                    let isLandscape = uiImage.size.width > uiImage.size.height
+                                    let thumbWidth: CGFloat = isLandscape ? 104 : 80
+                                    let thumbHeight: CGFloat = isLandscape ? 78 : 104
+                                    
+                                    ZStack(alignment: .topLeading) {
+                                        Image(uiImage: uiImage)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: thumbWidth, height: thumbHeight)
+                                            .cornerRadius(14)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 14)
+                                                    .stroke(LinearGradient(colors: [.white, .white.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2.5)
+                                            )
+                                            .shadow(color: .black.opacity(0.5), radius: 10, y: 5)
+                                            .rotationEffect(.degrees(index % 2 == 0 ? 2.5 : -2.5))
+                                            .clipped()
                                         
-                                        ZStack(alignment: .topLeading) {
-                                            Image(uiImage: uiImage)
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: thumbWidth, height: thumbHeight)
-                                                .cornerRadius(14)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 14)
-                                                        .stroke(LinearGradient(colors: [.white, .white.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2.5)
-                                                )
-                                                .shadow(color: .black.opacity(0.5), radius: 10, y: 5)
-                                                .rotationEffect(.degrees(index % 2 == 0 ? 2.5 : -2.5))
-                                                .clipped()
-                                            
-                                            // Photo Index Badge
-                                            Text("#\(index + 1)")
-                                                .font(.system(size: 10, weight: .black, design: .rounded))
-                                                .foregroundStyle(.white)
-                                                .padding(.horizontal, 7)
-                                                .padding(.vertical, 3)
-                                                .background(.ultraThinMaterial)
-                                                .background(Color.black.opacity(0.5))
-                                                .clipShape(Capsule())
-                                                .padding(6)
-                                                .offset(x: index % 2 == 0 ? 4 : -4)
-                                        }
+                                        // Photo Index Badge
+                                        Text("#\(index + 1)")
+                                            .font(.system(size: 10, weight: .black, design: .rounded))
+                                            .foregroundStyle(.white)
+                                            .padding(.horizontal, 7)
+                                            .padding(.vertical, 3)
+                                            .background(.ultraThinMaterial)
+                                            .background(Color.black.opacity(0.5))
+                                            .clipShape(Capsule())
+                                            .padding(6)
+                                            .offset(x: index % 2 == 0 ? 4 : -4)
                                     }
                                 }
                             }
@@ -1059,12 +1050,12 @@ struct ActiveSessionView: View {
                                 .frame(height: 14)
                                 .background(Color.white.opacity(0.3))
                             
-                            // Quota
+                            // Quota — M-011 STEP 2: count dari CapturedPhotoStore
                             HStack(spacing: 6) {
                                 Image(systemName: "camera.fill")
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color(hex: "#7C5CFC"))
-                                Text("\(s.photos.capturedCount)/\(s.package_.maxPhotoCount)")
+                                Text("\(CapturedPhotoStore.shared.capturedPhotos.count)/\(s.package_.maxPhotoCount)")
                                     .font(.system(size: 13, weight: .bold, design: .rounded))
                             }
                         }
