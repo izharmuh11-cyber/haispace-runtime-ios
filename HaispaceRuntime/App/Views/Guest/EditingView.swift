@@ -72,8 +72,10 @@ public struct EditingView: View {
             }
         }
         .onAppear {
+            print("[E10_AUDIT] EditingView appeared")
             let store = LocalAssetStore()
             self.frames = store.getAllAssets().filter { $0.assetType == "FRAME" }
+            print("[E10_AUDIT] Frame loaded (count: \(self.frames.count))")
             if let firstFrame = self.frames.first {
                 self.selectedFrameId = firstFrame.id
                 requestPreviewUpdate()
@@ -89,6 +91,7 @@ public struct EditingView: View {
     
     private func requestPreviewUpdate() {
         guard !selectedFrameId.isEmpty else { return }
+        print("[E10_AUDIT] Preview render requested for frame: \(selectedFrameId), filter: \(selectedFilterId)")
         isLoadingPreview = true
         Task {
             try? await appState.send(.updatePreview(frameId: selectedFrameId, filterId: selectedFilterId))

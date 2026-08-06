@@ -273,7 +273,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             
         case .acceptPhotoSelection(let photoIds):
             guard currentStage == .editingPreview, let sessionId = activeSessionId else { return }
-            
+            print("[E10_AUDIT] Intent acceptPhotoSelection received")
             // Simpan foto yang dipilih jika perlu (di sini bisa memanggil CapturedPhotoStore)
             // Untuk sekarang, cukup transisi ke templateSelection
             SessionAuditTrail.append(
@@ -283,6 +283,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 metadata: ["photoIds": photoIds.joined(separator: ",")]
             )
             self.currentStage = .templateSelection
+            print("[E10_AUDIT] Route -> templateSelection")
             
         case .selectFilter(let filterId):
             // Fallback for old selectFilter if any
@@ -290,6 +291,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             
         case .updatePreview(let frameId, let filterId):
             guard currentStage == .templateSelection, let sessionId = activeSessionId, let correlationId = currentCorrelationId else { return }
+            print("[E10_AUDIT] Preview render started (frame: \(frameId))")
             
             // 1. Dapatkan path Frame Asset
             let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
@@ -313,12 +315,14 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                let previewPath = firstPhoto.writeToTempFile() {
                 let previewResult = try await editing.requestPreview(photoInput: previewPath, correlationId: correlationId)
                 self.activePreviewReference = previewResult.outputReference
+                print("[E10_AUDIT] Preview render finished (output: \(previewResult.outputReference))")
             }
             
         case .acceptPreview:
             guard currentStage == .templateSelection,
                   let sessionId = activeSessionId,
                   let correlationId = currentCorrelationId else { return }
+            print("[E10_AUDIT] Export full resolution started")
             self.currentStage = .exporting
 
             // M-012.5 Audit: Gunakan PhotoReference — tidak ada lagi hardcoded path
@@ -331,6 +335,8 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             let exportResult = try await editing.requestExport(photoInput: exportPhotoRef.sourcePath, correlationId: correlationId)
             self.activePhotoId = exportResult.photoId
             self.activeOutputReference = exportResult.outputReference
+            
+            print("[E10_AUDIT] Export finished")
 
             SessionAuditTrail.append(
                 sessionId: sessionId.rawValue,

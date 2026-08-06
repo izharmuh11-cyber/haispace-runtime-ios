@@ -59,6 +59,7 @@ struct PhotoSelectionView: View {
                     // Button Lanjut
                     Button(action: {
                         // M-011 FINAL: Routing langsung via intent
+                        print("[E10_AUDIT] Leaving PhotoSelection")
                         Task {
                             try? await appState.send(.acceptPhotoSelection(photoIds: Array(selectedPhotoIds)))
                         }
