@@ -10,6 +10,8 @@ import Foundation
 
 public actor ManifestService {
     
+    public static let shared = ManifestService()
+    
     private let baseURL: URL
     private let session: URLSession
     private(set) public var currentLocalVersion: Int = 0
@@ -22,69 +24,86 @@ public actor ManifestService {
         self.session = session
     }
     
-    /// Mengambil Manifest terbaru dari Cloud API jika `manifestVersion` Cloud > Local.
-    public func fetchLatestManifest(boothId: String) async throws -> ManifestResponse? {
-        let endpoint = baseURL.appendingPathComponent("/v1/manifests/latest")
-            .appending(queryItems: [URLQueryItem(name: "boothId", value: boothId)])
+    /// Mengambil Manifest terbaru dari Cloud API menggunakan Device JWT
+    public func fetchLatestManifest(deviceToken: String) async throws -> EventRuntimeResponse? {
+        // Mengikuti spesifikasi E.6: GET /devices/me/event
+        let endpoint = baseURL.appendingPathComponent("/devices/me/event")
         
         var request = URLRequest(url: endpoint)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("booth-kiosk-runtime", forHTTPHeaderField: "User-Agent")
+        request.setValue("Bearer \(deviceToken)", forHTTPHeaderField: "Authorization")
         
         let (data, response) = try await session.data(for: request)
         
-        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            HaispaceLogger.warning("[ManifestService] Server returned non-200 status code", category: "cloud")
+        guard let httpResponse = response as? HTTPURLResponse else {
+            HaispaceLogger.warning("[ManifestService] Invalid HTTP Response", category: "cloud")
+            return nil
+        }
+        
+        if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+            HaispaceLogger.warning("[ManifestService] Device Token Invalid or Revoked", category: "cloud")
+            throw URLError(.userAuthenticationRequired)
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            HaispaceLogger.warning("[ManifestService] Server returned status code \(httpResponse.statusCode)", category: "cloud")
             return nil
         }
         
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         
-        let manifest = try decoder.decode(ManifestResponse.self, from: data)
+        let eventRuntime = try decoder.decode(EventRuntimeResponse.self, from: data)
         
-        // Rule V-001: Hanya terima jika manifestVersion Cloud > Local Version
-        guard manifest.manifestVersion > currentLocalVersion else {
-            HaispaceLogger.info("[ManifestService] Manifest versi \(manifest.manifestVersion) sudah ada di lokal", category: "cloud")
-            return nil
+        // Cek IDLE
+        if eventRuntime.status == "IDLE" {
+            HaispaceLogger.info("[ManifestService] Event is IDLE.", category: "cloud")
+            return eventRuntime
         }
         
-        self.currentLocalVersion = manifest.manifestVersion
-        HaispaceLogger.info("[ManifestService] New Manifest Version \(manifest.manifestVersion) fetched for Event: \(manifest.eventName)", category: "cloud")
-        return manifest
+        guard let manifestVersion = eventRuntime.manifest?.version else { return eventRuntime }
+        
+        // Rule V-001: Hanya update jika manifestVersion Cloud > Local Version
+        guard manifestVersion > currentLocalVersion else {
+            HaispaceLogger.info("[ManifestService] Manifest versi \(manifestVersion) sudah ada di lokal", category: "cloud")
+            return eventRuntime
+        }
+        
+        self.currentLocalVersion = manifestVersion
+        HaispaceLogger.info("[ManifestService] New Manifest Version \(manifestVersion) fetched", category: "cloud")
+        return eventRuntime
     }
 }
 
 // MARK: - DTO Manifest Response (Strict Contract)
 
-public struct ManifestResponse: Codable, Sendable {
-    public let manifestSchemaVersion: Int
-    public let manifestVersion: Int
-    public let eventId: String
-    public let eventName: String
-    public let boothId: String
-    public let publishedAt: Date
-    public let packages: [ManifestPackage]
-    public let allowedFrameIds: [String]
-    public let assets: [ManifestAsset]
+public struct EventRuntimeResponse: Codable, Sendable {
+    public let status: String
+    public let event: EventInfo?
+    public let manifest: ManifestInfo?
+    public let packages: [PackageInfo]?
+    public let assets: [CloudAssetDTO]?
 }
 
-public struct ManifestPackage: Codable, Sendable {
-    public let packageId: String
-    public let packageName: String
-    public let price: Int
+public struct EventInfo: Codable, Sendable {
+    public let id: String
+    public let name: String
+    public let venue: String?
+    public let scheduledDate: String?
+}
+
+public struct ManifestInfo: Codable, Sendable {
+    public let id: String
+    public let version: Int
+    public let publishedAt: String?
+}
+
+public struct PackageInfo: Codable, Sendable {
+    public let id: String
+    public let name: String
+    public let priceAmount: Int
     public let captureLimit: Int
-    public let minSelectionCount: Int
-    public let maxSelectionCount: Int
-    public let supportedFrameIds: [String]
+    public let selectionLimit: Int
 }
 
-public struct ManifestAsset: Codable, Sendable {
-    public let assetId: String
-    public let assetType: String
-    public let checksum: String
-    public let downloadUrl: String
-    public let fileSizeBytes: Int64
-    public let minRuntimeVersion: String
-}

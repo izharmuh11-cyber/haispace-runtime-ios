@@ -53,11 +53,31 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
             let capRes = try await regService.fetchCapabilities()
             logger.logEvent("DEVICE REGISTERED", payload: "Latest Client Version: \(capRes.latestClientVersion)")
             
-            // 4. MANIFEST DOWNLOAD
+            // 4. MANIFEST DOWNLOAD & ASSET SYNC
             updateState(.manifestDownload)
             logger.logEvent("MANIFEST DOWNLOAD STARTED")
-            let manifest = try await manifestService.fetchManifest()
-            logger.logEvent("MANIFEST READY", payload: "v\(manifest.version)")
+            
+            let keyStore = DeviceKeyStore()
+            if let token = keyStore.getDeviceToken() {
+                if let eventRuntime = try await manifestService.fetchLatestManifest(deviceToken: token) {
+                    if eventRuntime.status == "IDLE" {
+                        logger.logEvent("EVENT IS IDLE")
+                    } else {
+                        logger.logEvent("MANIFEST READY", payload: "v\(eventRuntime.manifest?.version ?? 0)")
+                        
+                        // SYNC ASSETS
+                        if let cloudAssets = eventRuntime.assets, !cloudAssets.isEmpty {
+                            logger.logEvent("ASSET SYNC STARTED", payload: "\(cloudAssets.count) assets")
+                            let store = LocalAssetStore()
+                            let syncService = AssetSyncService(store: store)
+                            try await syncService.syncAssets(from: cloudAssets)
+                            logger.logEvent("ASSET SYNC COMPLETED")
+                        }
+                    }
+                }
+            } else {
+                logger.logEvent("DEVICE TOKEN MISSING - SKIP MANIFEST")
+            }
             
             // 5. HEARTBEAT START
             HeartbeatService.shared.startPinging()
