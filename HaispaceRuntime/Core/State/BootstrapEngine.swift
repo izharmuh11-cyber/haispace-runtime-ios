@@ -86,7 +86,7 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
             
             // 5. HEARTBEAT START
             logger.auditLog(step: "Heartbeat Request", status: "SUCCESS")
-            HeartbeatService.shared.startPinging()
+            // HeartbeatService diatur di level App/Orchestrator, bootstrap hanya menandai ready
             
             // 6. READY
             updateState(.ready)

@@ -262,8 +262,7 @@ struct ActiveSessionView: View {
                 // via WorkflowOrchestrator secara otomatis.
                 // Transisi ke layar berikutnya juga akan ditangani Orchestrator jika kuota terpenuhi.
             } catch {
-                    payload: "\(error.localizedDescription)"
-                )
+                await RuntimeTimelineLogger.shared.logEvent("CAPTURE_FAILED", payload: "\(error.localizedDescription)")
             }
         }
     }
