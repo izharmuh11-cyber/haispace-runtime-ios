@@ -139,7 +139,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 try await camera.prepare(configuration: CameraConfiguration())
                 try await camera.startSession(sessionId: sessionId)
             } catch {
-                RuntimeTimelineLogger.shared.logEvent("CAMERA_MOCK_FALLBACK", payload: "Hardware not available: \(error.localizedDescription)")
+                await RuntimeTimelineLogger.shared.logEvent("CAMERA_MOCK_FALLBACK", payload: "Hardware not available: \(error.localizedDescription)")
             }
             
             // M-011 STEP 1: Start Photo Input listening
@@ -167,7 +167,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             SessionAuditTrail.append(
                 sessionId: sessionId.rawValue,
                 stage: currentStage,
-                eventType: .operatorIntervened,
+                eventType: .photoCaptured,
                 metadata: ["action": "triggerShutter"]
             )
             
@@ -546,12 +546,10 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 case .finished:
                     HaispaceLogger.info("[M-011.5] Session timer finished", category: "timer")
                     // M-011.5: Paksa transisi ke templateSelection jika waktu habis
-                    if let orchestrator = self {
-                        let stage = await orchestrator.currentStage
-                        if stage == .capturing {
-                            HaispaceLogger.info("[M-011.5] Timeout reached during capturing, forcing transition to templateSelection", category: "workflow")
-                            await orchestrator.forceTransitionToTemplateSelection()
-                        }
+                    let stage = await self.currentStage
+                    if stage == .capturing {
+                        HaispaceLogger.info("[M-011.5] Timeout reached during capturing, forcing transition to templateSelection", category: "workflow")
+                        await self.forceTransitionToTemplateSelection()
                     }
                     
                 case .paused(let at):
