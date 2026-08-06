@@ -140,7 +140,7 @@ final class AppState {
             
             // M-011 FIX: Otomatis upload log ke R2 saat terjadi transisi UI penting
             // Ini membantu debug automation test agar kita selalu punya log terakhir di R2.
-            Logger.uploadLatestLog(eventName: "route_\(newRoute)")
+            R2LogUploader.uploadLatestLog(eventName: "route_\(newRoute)")
         }
         // M-011 STEP 3B.1: Refresh SessionContext dari HaispaceSession actor setiap kali intent diproses
         if let activeSession = await runtime.orchestrator.activeSession {
@@ -251,7 +251,7 @@ final class AppState {
                     // Hanya otomatis update jika berbeda dan bukan sedang reset ke landing secara paksa
                     self.currentRoute = newRoute
                     print("[E10_AUDIT] Auto-Transition -> \(newRoute)")
-                    Logger.uploadLatestLog(eventName: "auto_route_\(newRoute)")
+                    R2LogUploader.uploadLatestLog(eventName: "auto_route_\(newRoute)")
                 }
                 
                 // 2. Sync SessionContext Timer
