@@ -54,6 +54,21 @@ public final class CapturedPhotoStore {
     
     public func appendCapture(path: String) {
         capturedPhotoPaths.append(path)
+        
+        // M-011 FIX: Sinkronisasi native camera capture ke capturedPhotos list untuk UI filmstrip
+        if let url = URL(string: "file://\(path)"), let data = try? Data(contentsOf: url) {
+            let photoId = UUID().uuidString
+            let photo = CapturedPhoto(
+                id: photoId,
+                thumbnailData: data,
+                capturedAt: Date(),
+                sortOrder: capturedPhotos.count
+            )
+            photo.fullQualityData = data
+            photo.quality = .fullQuality
+            capturedPhotos.append(photo)
+        }
+        
         RuntimeTimelineLogger.shared.logEvent("CAPTURE_STORED", payload: path)
     }
     
