@@ -135,8 +135,12 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             let sessionId = getOrCreateActiveSession()
             
             // Prepare Camera Capabilities right away for photo capture
-            try await camera.prepare(configuration: CameraConfiguration())
-            try await camera.startSession(sessionId: sessionId)
+            do {
+                try await camera.prepare(configuration: CameraConfiguration())
+                try await camera.startSession(sessionId: sessionId)
+            } catch {
+                RuntimeTimelineLogger.shared.logEvent("CAMERA_MOCK_FALLBACK", payload: "Hardware not available: \(error.localizedDescription)")
+            }
             
             // M-011 STEP 1: Start Photo Input listening
             startPhotoInputListening()
