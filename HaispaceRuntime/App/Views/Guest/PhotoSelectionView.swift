@@ -58,10 +58,9 @@ struct PhotoSelectionView: View {
                     
                     // Button Lanjut
                     Button(action: {
-                        // M-011 FINAL: Routing langsung, tidak melalui SessionStore
+                        // M-011 FINAL: Routing langsung via intent
                         Task {
-                            try? await appState.send(.selectTemplate(frameId: "")) // placeholder
-                            appState.navigateTo(.frameSelection)
+                            try? await appState.send(.acceptPhotoSelection(photoIds: Array(selectedPhotoIds)))
                         }
                     }) {
                         Text("Lanjut ke Bingkai \u{2192}")

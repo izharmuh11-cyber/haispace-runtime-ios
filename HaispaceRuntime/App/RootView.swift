@@ -209,7 +209,7 @@ private struct KioskRouterView: View {
         case .photoSelection:
             PhotoSelectionView()
         case .frameSelection:
-            FrameSelectionView()
+            EditingView()
         case .payment:
             PaymentView()
         case .processing:

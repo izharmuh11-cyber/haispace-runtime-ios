@@ -271,12 +271,25 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             )
             self.currentStage = .editingPreview
             
+        case .acceptPhotoSelection(let photoIds):
+            guard currentStage == .editingPreview, let sessionId = activeSessionId else { return }
+            
+            // Simpan foto yang dipilih jika perlu (di sini bisa memanggil CapturedPhotoStore)
+            // Untuk sekarang, cukup transisi ke templateSelection
+            SessionAuditTrail.append(
+                sessionId: sessionId.rawValue,
+                stage: .templateSelection,
+                eventType: .operatorIntervened, // dummy eventType, idealnya photoSelected
+                metadata: ["photoIds": photoIds.joined(separator: ",")]
+            )
+            self.currentStage = .templateSelection
+            
         case .selectFilter(let filterId):
             // Fallback for old selectFilter if any
             break
             
         case .updatePreview(let frameId, let filterId):
-            guard currentStage == .editingPreview, let sessionId = activeSessionId, let correlationId = currentCorrelationId else { return }
+            guard currentStage == .templateSelection, let sessionId = activeSessionId, let correlationId = currentCorrelationId else { return }
             
             // 1. Dapatkan path Frame Asset
             let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
@@ -303,7 +316,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             }
             
         case .acceptPreview:
-            guard currentStage == .editingPreview,
+            guard currentStage == .templateSelection,
                   let sessionId = activeSessionId,
                   let correlationId = currentCorrelationId else { return }
             self.currentStage = .exporting

@@ -26,6 +26,7 @@ public enum WorkflowIntent: Sendable {
     case startGuestRegistration
     case guestSubmittedInfo(name: String, email: String)
     case selectPackage(packageId: String)
+    case acceptPhotoSelection(photoIds: [String])
     case selectTemplate(frameId: String)
     case selectFilter(filterId: String)
     case updatePreview(frameId: String, filterId: String)
