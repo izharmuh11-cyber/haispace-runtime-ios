@@ -252,7 +252,8 @@ final class AppState {
                         minPhotoCount: self.sessionContext.minPhotoCount,
                         queueNumber: self.sessionContext.queueNumber,
                         guestName: self.sessionContext.guestName,
-                        remainingSeconds: remaining
+                        remainingSeconds: remaining,
+                        latestPreviewReference: self.sessionContext.latestPreviewReference
                     )
                 }
             }
@@ -307,7 +308,8 @@ extension AppState {
             minPhotoCount: 3,
             queueNumber: 42,
             guestName: "Sarah",
-            remainingSeconds: 180
+            remainingSeconds: 180,
+            latestPreviewReference: nil
         )
         let mockPhotos = CapturedPhoto.mockPhotos(count: 5)
         for photo in mockPhotos {
