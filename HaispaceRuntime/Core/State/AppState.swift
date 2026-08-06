@@ -133,8 +133,11 @@ final class AppState {
         // WorkflowOrchestrator adalah satu-satunya yang memproses intent.
         try await runtime.orchestrator.handleIntent(intent)
         let newStage = await runtime.orchestrator.currentStage
-        currentRoute = WorkflowRouteMapper.route(for: newStage)
-        
+        let newRoute = WorkflowRouteMapper.route(for: newStage)
+        if currentRoute != newRoute {
+            currentRoute = newRoute
+            print("[E10_AUDIT] Router -> \(newRoute)")
+        }
         // M-011 STEP 3B.1: Refresh SessionContext dari HaispaceSession actor setiap kali intent diproses
         if let activeSession = await runtime.orchestrator.activeSession {
             let policy = await activeSession.capturePolicy

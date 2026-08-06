@@ -1100,10 +1100,9 @@ struct ActiveSessionView: View {
                 HStack {
                     Spacer()
                     Button(action: {
-                        // M-011 FINAL: navigateTo diganti akses langsung ke currentRoute
                         Task {
-                            await appState.runtime.orchestrator.stopSessionCountdown()
-                            appState.navigateTo(.photoSelection)
+                            // M-011 FINAL: Kirim intent ke Orchestrator, biarkan Orchestrator yang menentukan routing.
+                            try? await appState.send(.finishCapture)
                         }
                     }) {
                         HStack(spacing: 6) {

@@ -264,12 +264,25 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 throw error  // re-throw — error type harus preserved (Failure Injection Test)
             }
 
+            // Jangan transisi ke editingPreview di sini. Tunggu finishCapture.
+            SessionAuditTrail.append(
+                sessionId: sessionId.rawValue,
+                stage: .capturing,
+                eventType: .photoCaptured
+            )
+            
+        case .finishCapture:
+            guard currentStage == .capturing, let sessionId = activeSessionId else { return }
+            print("[E10_AUDIT] finishCapture intent received")
+            self.stopSessionCountdown() // Hentikan timer jika belum habis
+            
             SessionAuditTrail.append(
                 sessionId: sessionId.rawValue,
                 stage: .editingPreview,
                 eventType: .photoCaptured
             )
             self.currentStage = .editingPreview
+            print("[E10_AUDIT] Workflow stage -> editingPreview")
             
         case .acceptPhotoSelection(let photoIds):
             guard currentStage == .editingPreview, let sessionId = activeSessionId else { return }

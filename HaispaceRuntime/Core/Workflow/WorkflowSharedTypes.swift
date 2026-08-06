@@ -31,6 +31,7 @@ public enum WorkflowIntent: Sendable {
     case selectFilter(filterId: String)
     case updatePreview(frameId: String, filterId: String)
     case triggerShutter
+    case finishCapture
     case acceptPreview
     case confirmPaymentSuccess
     case finishSession
