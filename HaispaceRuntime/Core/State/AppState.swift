@@ -157,6 +157,9 @@ final class AppState {
     func setup() async {
         HaispaceLogger.info("AppState setup dimulai", category: "app")
 
+        // 0. Mulai background observer untuk Runtime (M-011.5 Timer & Auto-Transitions)
+        startRuntimeObserver()
+
         // 0. M-005: Platform Awakening — Runtime Bootstrap
         await runtime.bootstrapEngine.startBootstrapSequence()
 
@@ -213,6 +216,43 @@ final class AppState {
     func navigateTo(_ route: KioskRoute) {
         currentRoute = route
         HaispaceLogger.info("[Route] \(route)", category: "workflow")
+    }
+    
+    // MARK: - Runtime Background Observer (M-011.5)
+    
+    private var runtimeObserverTask: Task<Void, Never>?
+    
+    /// Mengawasi perubahan state asinkron dari WorkflowOrchestrator
+    /// (misal: Timer habis, Kuota Foto penuh, atau Push Event Cloud).
+    private func startRuntimeObserver() {
+        runtimeObserverTask?.cancel()
+        runtimeObserverTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 500_000_000) // Poll 0.5s
+                guard let self else { break }
+                
+                let stage = await self.runtime.orchestrator.currentStage
+                let remaining = await self.runtime.orchestrator.sessionTimerRemaining
+                
+                // 1. Sync Route (Auto-transition)
+                let newRoute = WorkflowRouteMapper.route(for: stage)
+                if newRoute != self.currentRoute && newRoute != .landing {
+                    // Hanya otomatis update jika berbeda dan bukan sedang reset ke landing secara paksa
+                    self.currentRoute = newRoute
+                }
+                
+                // 2. Sync SessionContext Timer
+                if self.sessionContext.remainingSeconds != remaining {
+                    self.sessionContext = SessionContext(
+                        maxPhotoCount: self.sessionContext.maxPhotoCount,
+                        minPhotoCount: self.sessionContext.minPhotoCount,
+                        queueNumber: self.sessionContext.queueNumber,
+                        guestName: self.sessionContext.guestName,
+                        remainingSeconds: remaining
+                    )
+                }
+            }
+        }
     }
     
     // M-011 FINAL: hasActiveSession sekarang berdasarkan WorkflowOrchestrator.currentStage

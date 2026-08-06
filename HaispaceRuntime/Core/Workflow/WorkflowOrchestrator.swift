@@ -31,6 +31,11 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
     public let delivery: DeliveryCapabilityProtocol
     public let p2p: P2PCapabilityProtocol
     
+    // Sub-Orchestrator Delegations (Refactoring Phase B)
+    public let captureOrchestrator: CaptureOrchestrator
+    public let checkoutOrchestrator: CheckoutOrchestrator
+    public let recoveryEngine: SessionRecoveryEngine
+    
     // Repository Layer (Phase B)
     public let sessionRepository: SessionRepositoryProtocol
     private(set) public var activeSession: HaispaceSession?
@@ -85,7 +90,12 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
         self.payment = payment
         self.delivery = delivery
         self.p2p = p2p
-        self.sessionRepository = sessionRepository ?? (try? LocalSessionRepository()) ?? NoOpSessionRepository()
+        let repo = sessionRepository ?? (try? LocalSessionRepository()) ?? NoOpSessionRepository()
+        self.sessionRepository = repo
+        
+        self.captureOrchestrator = CaptureOrchestrator(camera: camera, p2p: p2p)
+        self.checkoutOrchestrator = CheckoutOrchestrator(editing: editing, payment: payment, delivery: delivery, sessionRepository: repo)
+        self.recoveryEngine = SessionRecoveryEngine()
     }
     
     // MARK: - Intent Handling (From SwiftUI UI Layer)
@@ -130,6 +140,9 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             
             // M-011 STEP 1: Start Photo Input listening
             startPhotoInputListening()
+            
+            // M-011.5: Start Global Session Timer (e.g. 300 seconds default, should be from package config)
+            startSessionCountdown(duration: 300)
 
             SessionAuditTrail.append(
                 sessionId: sessionId.rawValue,
@@ -138,6 +151,21 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 metadata: ["packageId": packageId]
             )
             self.currentStage = .capturing
+            
+        case .triggerShutter:
+            guard let sessionId = activeSessionId else { throw WorkflowError.sessionNotActive }
+            let correlationId = currentCorrelationId ?? CorrelationID()
+            self.currentCorrelationId = correlationId
+            
+            // Perintahkan CameraCapability untuk mengambil foto
+            try await camera.requestCapture(correlationId: correlationId)
+            
+            SessionAuditTrail.append(
+                sessionId: sessionId.rawValue,
+                stage: currentStage,
+                eventType: .operatorIntervened,
+                metadata: ["action": "triggerShutter"]
+            )
             
         case .selectTemplate(let frameId):
             guard let sessionId = activeSessionId else { throw WorkflowError.sessionNotActive }
@@ -454,6 +482,16 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 Task { @MainActor in
                     RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
                 }
+                
+                // M-011.5: Periksa kuota foto. Jika mencapai batas maksimal, akhiri sesi otomatis.
+                let photoCount = await CapturedPhotoStore.shared.capturedPhotos.count
+                let maxPhotos = 5 // TODO: Fetch from actual sessionContext/Package
+                if photoCount >= maxPhotos {
+                    HaispaceLogger.info("[M-011.5] Photo quota reached (\(photoCount)/\(maxPhotos)), transitioning to templateSelection", category: "workflow")
+                    if let orchestrator = self {
+                        await orchestrator.forceTransitionToTemplateSelection()
+                    }
+                }
             }
         }
         
@@ -503,8 +541,14 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                     await self.updateSessionTimerRemaining(remaining)
                 case .finished:
                     HaispaceLogger.info("[M-011.5] Session timer finished", category: "timer")
-                    // Orchestrator memutuskan apa yang terjadi saat timer habis.
-                    // Untuk sekarang: tidak ada auto-action (operator atau tamu yang trigger).
+                    // M-011.5: Paksa transisi ke templateSelection jika waktu habis
+                    if let orchestrator = self {
+                        let stage = await orchestrator.currentStage
+                        if stage == .capturing {
+                            HaispaceLogger.info("[M-011.5] Timeout reached during capturing, forcing transition to templateSelection", category: "workflow")
+                            await orchestrator.forceTransitionToTemplateSelection()
+                        }
+                    }
                     
                 case .paused(let at):
                     HaispaceLogger.info("[M-011.5] Timer paused at \(at)s", category: "timer")
@@ -529,6 +573,12 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
         sessionTimerTask = nil
         sessionTimerRemaining = 0
         HaispaceLogger.info("[M-011.5] Session countdown stopped", category: "timer")
+    }
+    
+    /// Memaksa transisi ke template selection secara aman dari luar context actor.
+    func forceTransitionToTemplateSelection() {
+        stopSessionCountdown()
+        self.currentStage = .templateSelection
     }
     
     /// Pause session timer (misalnya saat operator intervensi).

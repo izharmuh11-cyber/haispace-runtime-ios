@@ -252,78 +252,14 @@ struct ActiveSessionView: View {
             }
         }
         
-        // 2. M-010: Trigger REAL capture via CameraCapabilityService
+        // 2. M-011.5: Trigger capture via Orchestrator intent
         Task {
-            let correlationId = CorrelationID(rawValue: UUID().uuidString)
-            await RuntimeTimelineLogger.shared.logEvent("[1] Shutter Pressed")
             do {
-                try await CameraCapabilityService.shared.requestCapture(correlationId: correlationId)
-                
-                // M-011 STEP 2: Route ke CapturedPhotoStore via PhotoEvent.
-                // SessionStore tidak lagi terlibat dalam alur foto.
-                await RuntimeTimelineLogger.shared.logEvent("[7] Routing to CapturedPhotoStore via PhotoEvent")
-                
-                var currentCount = 0
-                // M-011 STEP 3B.1: Baca maxPhotoCount dari sessionContext, bukan SessionStore
-                let maxCount = appState.sessionContext.maxPhotoCount
-                
-                await MainActor.run {
-                    if let path = CapturedPhotoStore.shared.latestCapturedPhotoPath {
-                        do {
-                            let data = try Data(contentsOf: URL(fileURLWithPath: path))
-                            let photoId = UUID().uuidString
-                            let currentOrder = sortOrder ?? CapturedPhotoStore.shared.capturedPhotos.count
-                            
-                            // M-011: Kirim via PhotoEvent — Store tidak tahu sumbernya dari mana
-                            CapturedPhotoStore.shared.receivePhotoEvent(
-                                .thumbnailArrived(
-                                    photoId: photoId,
-                                    data: data,
-                                    capturedAt: Date(),
-                                    sortOrder: currentOrder
-                                )
-                            )
-                            CapturedPhotoStore.shared.receivePhotoEvent(
-                                .fullQualityArrived(photoId: photoId, fullData: data)
-                            )
-                            RuntimeTimelineLogger.shared.logEvent("SESSION STORE RECEIVED THUMBNAIL")
-                            
-                            // Show Preview Card UX
-                            if let newlyAdded = CapturedPhotoStore.shared.capturedPhotos.first(where: { $0.id == photoId }) {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                    self.activeSelectedPhotoForPreview = newlyAdded
-                                }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                                    if self.activeSelectedPhotoForPreview?.id == photoId {
-                                        withAnimation(.easeOut(duration: 0.3)) {
-                                            self.activeSelectedPhotoForPreview = nil
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            currentCount = CapturedPhotoStore.shared.capturedPhotos.count
-                            
-                            if currentCount >= maxCount {
-                                RuntimeTimelineLogger.shared.logEvent("PHOTO SELECTION ROUTE ACTIVATED")
-                                // M-011 FINAL: Routing langsung ke photoSelection via AppState
-                                Task { @MainActor in
-                                    appState.navigateTo(.photoSelection)
-                                }
-                            }
-                        } catch {
-                            RuntimeTimelineLogger.shared.logEvent("CAPTURE ERROR: Data load failed - \(error.localizedDescription)")
-                        }
-                    } else {
-                        RuntimeTimelineLogger.shared.logEvent("CAPTURE ERROR: latestCapturedPhotoPath is nil!")
-                    }
-                }
-                
-                await RuntimeTimelineLogger.shared.logEvent("[8] UI Received (Photo added to CapturedPhotoStore)")
-                await RuntimeTimelineLogger.shared.logEvent("PHOTO COUNT \(currentCount)/\(maxCount)")
+                try await appState.send(.triggerShutter)
+                // Foto akan ditangkap oleh CameraCapability dan dialirkan ke CapturedPhotoStore
+                // via WorkflowOrchestrator secara otomatis.
+                // Transisi ke layar berikutnya juga akan ditangani Orchestrator jika kuota terpenuhi.
             } catch {
-                await RuntimeTimelineLogger.shared.logEvent(
-                    "CAPTURE FAILED",
                     payload: "\(error.localizedDescription)"
                 )
             }
