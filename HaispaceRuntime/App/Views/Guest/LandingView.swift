@@ -39,6 +39,7 @@ public struct LandingView: View {
 
                 // CTA Button (Design System PrimaryButton)
                 PrimaryButton(title: "Mulai", iconName: "arrow.right") {
+                    RuntimeTimelineLogger.shared.auditLog(step: "Start Button Pressed")
                     resetIdleTimer()
                     Task { try? await appState.send(.startGuestRegistration) }
                 }
@@ -57,6 +58,9 @@ public struct LandingView: View {
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
                 .animation(Motion.screen, value: isIdle)
+                .onAppear {
+                    RuntimeTimelineLogger.shared.auditLog(step: "Idle Screen Shown", status: "INFO")
+                }
             }
         }
         .onAppear { startIdleTimer() }
@@ -70,6 +74,10 @@ public struct LandingView: View {
                 .font(AppFont.title)
                 .foregroundStyle(AppTheme.Brand.textPrimary)
                 .tracking(4)
+                .onLongPressGesture(minimumDuration: 3.0) {
+                    UIPasteboard.general.string = RuntimeTimelineLogger.shared.exportLogs()
+                    RuntimeTimelineLogger.shared.logEvent("LOGS COPIED TO CLIPBOARD")
+                }
 
             Text("PHOTO EXPERIENCE")
                 .font(AppFont.caption)

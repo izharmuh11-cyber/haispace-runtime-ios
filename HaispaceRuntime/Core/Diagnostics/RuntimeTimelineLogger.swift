@@ -49,4 +49,15 @@ public final class RuntimeTimelineLogger {
         // Simpan juga ke file log agar bisa diupload ke R2
         HaispaceLogger.info(event.displayString, category: "timeline")
     }
+    
+    // MARK: - M1 Audit Helper
+    
+    public func auditLog(step: String, status: String = "SUCCESS", detail: String? = nil) {
+        let prefix = "[M1_AUDIT] [\(status.uppercased())] \(step)"
+        logEvent(prefix, payload: detail)
+    }
+    
+    public func exportLogs() -> String {
+        return events.map { $0.displayString }.joined(separator: "\n")
+    }
 }

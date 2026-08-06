@@ -142,6 +142,8 @@ struct ActiveSessionView: View {
                     }
                 }
             }
+            
+            RuntimeTimelineLogger.shared.auditLog(step: "Camera Preview Ready")
         }
         .onDisappear {
             gestureListenerTask?.cancel()

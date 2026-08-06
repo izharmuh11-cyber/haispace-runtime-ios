@@ -31,6 +31,8 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
     
     public func startBootstrapSequence() async {
         let logger = RuntimeTimelineLogger.shared
+        logger.auditLog(step: "App Launch", status: "SUCCESS")
+        logger.auditLog(step: "Bootstrap Started", status: "SUCCESS")
         logger.logEvent("BOOT STARTED")
         
         do {
@@ -59,6 +61,8 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
             
             let keyStore = DeviceKeyStore()
             if let token = keyStore.getDeviceToken() {
+                logger.auditLog(step: "Device JWT Loaded", status: "SUCCESS")
+                
                 if let eventRuntime = try await manifestService.fetchLatestManifest(deviceToken: token) {
                     if eventRuntime.status == "IDLE" {
                         logger.logEvent("EVENT IS IDLE")
@@ -76,18 +80,22 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
                     }
                 }
             } else {
+                logger.auditLog(step: "Device JWT Loaded", status: "FAILED", detail: "Token missing")
                 logger.logEvent("DEVICE TOKEN MISSING - SKIP MANIFEST")
             }
             
             // 5. HEARTBEAT START
+            logger.auditLog(step: "Heartbeat Request", status: "SUCCESS")
             HeartbeatService.shared.startPinging()
             
             // 6. READY
             updateState(.ready)
             logger.logEvent("STATE READY")
+            logger.auditLog(step: "Bootstrap Ready", status: "SUCCESS")
             
         } catch {
             updateState(.error)
+            logger.auditLog(step: "Bootstrap Sequence", status: "FAILED", detail: error.localizedDescription)
             logger.logEvent("BOOT ERROR", payload: error.localizedDescription)
         }
     }

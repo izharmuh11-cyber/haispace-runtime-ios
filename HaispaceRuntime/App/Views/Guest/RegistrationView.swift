@@ -216,6 +216,9 @@ struct RegistrationView: View {
                 Spacer()
             }
         }
+        .onAppear {
+            RuntimeTimelineLogger.shared.auditLog(step: "Registration Started")
+        }
     }
     
     private func submit() {

@@ -37,9 +37,12 @@ public class AssetSyncService {
             // Delta update: Cek kesamaan checksum
             if local.checksum == cloudAsset.checksum {
                 // Checksum cocok, tidak perlu download ulang
+                await RuntimeTimelineLogger.shared.auditLog(step: "Asset Sync", status: "CACHE_HIT", detail: "\(cloudAsset.id)")
                 return
             }
         }
+        
+        await RuntimeTimelineLogger.shared.auditLog(step: "Asset Sync", status: "CACHE_MISS", detail: "\(cloudAsset.id)")
         
         // Memerlukan unduhan
         guard let urlString = cloudAsset.downloadUrl, let url = URL(string: urlString) else {
@@ -63,9 +66,11 @@ public class AssetSyncService {
             // Asumsi checksum dari backend berupa hex string murni.
             let cleanExpected = expectedChecksum.replacingOccurrences(of: "sha256:", with: "").lowercased()
             if hashString != cleanExpected {
+                await RuntimeTimelineLogger.shared.auditLog(step: "Checksum Validation", status: "FAILED", detail: "Mismatch for \(cloudAsset.id)")
                 throw AssetSyncError.checksumMismatch
             }
         }
+        await RuntimeTimelineLogger.shared.auditLog(step: "Checksum Validation", status: "SUCCESS", detail: "\(cloudAsset.id)")
         
         // Tentukan ekstensi dari URL aslinya
         let ext = url.pathExtension.isEmpty ? "bin" : url.pathExtension
@@ -99,5 +104,6 @@ public class AssetSyncService {
         )
         
         try store.saveAsset(asset: localAsset)
+        await RuntimeTimelineLogger.shared.auditLog(step: "Asset Saved", status: "SUCCESS", detail: "\(cloudAsset.id)")
     }
 }

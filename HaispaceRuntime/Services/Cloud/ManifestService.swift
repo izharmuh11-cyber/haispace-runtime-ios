@@ -26,6 +26,9 @@ public actor ManifestService {
     
     /// Mengambil Manifest terbaru dari Cloud API menggunakan Device JWT
     public func fetchLatestManifest(deviceToken: String) async throws -> EventRuntimeResponse? {
+        let logger = await RuntimeTimelineLogger.shared
+        await logger.auditLog(step: "Manifest Request", status: "START")
+        
         // Mengikuti spesifikasi E.6: GET /devices/me/event
         let endpoint = baseURL.appendingPathComponent("/devices/me/event")
         
@@ -37,16 +40,19 @@ public actor ManifestService {
         let (data, response) = try await session.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
+            await logger.auditLog(step: "Manifest Request", status: "FAILED", detail: "Invalid HTTP Response")
             HaispaceLogger.warning("[ManifestService] Invalid HTTP Response", category: "cloud")
             return nil
         }
         
         if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+            await logger.auditLog(step: "Manifest Request", status: "FAILED", detail: "Token Invalid/Revoked")
             HaispaceLogger.warning("[ManifestService] Device Token Invalid or Revoked", category: "cloud")
             throw URLError(.userAuthenticationRequired)
         }
         
         guard httpResponse.statusCode == 200 else {
+            await logger.auditLog(step: "Manifest Request", status: "FAILED", detail: "HTTP \(httpResponse.statusCode)")
             HaispaceLogger.warning("[ManifestService] Server returned status code \(httpResponse.statusCode)", category: "cloud")
             return nil
         }
@@ -55,12 +61,15 @@ public actor ManifestService {
         decoder.dateDecodingStrategy = .iso8601
         
         let eventRuntime = try decoder.decode(EventRuntimeResponse.self, from: data)
+        await logger.auditLog(step: "Manifest Request", status: "SUCCESS")
         
         // Cek IDLE
         if eventRuntime.status == "IDLE" {
+            await logger.auditLog(step: "Event Status", status: "INFO", detail: "IDLE")
             HaispaceLogger.info("[ManifestService] Event is IDLE.", category: "cloud")
             return eventRuntime
         }
+        await logger.auditLog(step: "Event Status", status: "SUCCESS", detail: "ACTIVE")
         
         guard let manifestVersion = eventRuntime.manifest?.version else { return eventRuntime }
         

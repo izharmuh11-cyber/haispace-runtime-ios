@@ -41,9 +41,14 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
         
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         if status == .notDetermined {
+            await RuntimeTimelineLogger.shared.auditLog(step: "Camera Permission", status: "INFO", detail: "Requesting")
             _ = await AVCaptureDevice.requestAccess(for: .video)
+            await RuntimeTimelineLogger.shared.auditLog(step: "Camera Permission", status: "SUCCESS", detail: "Granted")
         } else if status == .denied || status == .restricted {
+            await RuntimeTimelineLogger.shared.auditLog(step: "Camera Permission", status: "FAILED", detail: "Denied")
             throw CameraError.deviceUnavailable
+        } else {
+            await RuntimeTimelineLogger.shared.auditLog(step: "Camera Permission", status: "SUCCESS", detail: "Already Granted")
         }
         
         try await controller.configure(frameRate: configuration.frameRate)
@@ -54,6 +59,7 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
     }
     
     public func startSession(sessionId: SessionID) async throws {
+        await RuntimeTimelineLogger.shared.auditLog(step: "Camera Session Started", status: "SUCCESS")
         await RuntimeTimelineLogger.shared.logEvent("CAMERA SESSION START", payload: sessionId.rawValue)
         await controller.start()
     }
