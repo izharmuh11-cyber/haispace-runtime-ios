@@ -279,7 +279,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             SessionAuditTrail.append(
                 sessionId: sessionId.rawValue,
                 stage: .templateSelection,
-                eventType: .operatorIntervened, // dummy eventType, idealnya photoSelected
+                eventType: .templateSelected, // Diganti dengan eventType yang benar
                 metadata: ["photoIds": photoIds.joined(separator: ",")]
             )
             self.currentStage = .templateSelection
