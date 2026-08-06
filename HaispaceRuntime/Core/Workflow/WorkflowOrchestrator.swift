@@ -23,6 +23,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
     private var currentCorrelationId: CorrelationID?
     private var activePhotoId: PhotoID?
     private var activeOutputReference: String?
+    private(set) public var activePreviewReference: String?
     
     // Capabilities Injected via Protocols
     public let camera: CameraCapabilityProtocol
@@ -271,15 +272,34 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             self.currentStage = .editingPreview
             
         case .selectFilter(let filterId):
-            guard currentStage == .editingPreview, let correlationId = currentCorrelationId else { return }
-            let filterRef = FilterReference(filterId: filterId, lutFileName: "luts/\(filterId).cube")
-            _ = EditingConfiguration(filter: filterRef)
+            // Fallback for old selectFilter if any
+            break
             
-            // M-012.5 Audit: Gunakan PhotoReference — sama seperti selectTemplate
+        case .updatePreview(let frameId, let filterId):
+            guard currentStage == .editingPreview, let sessionId = activeSessionId, let correlationId = currentCorrelationId else { return }
+            
+            // 1. Dapatkan path Frame Asset
+            let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+            let frameAssetPath = cachesDir.appendingPathComponent("HaispaceFrames/\(frameId).png").path
+            
+            // 2. Siapkan konfigurasi (Frame + Filter)
+            let frameRef = FrameReference(frameId: frameId, assetPath: frameAssetPath)
+            let filterRef: FilterReference? = filterId == "original" ? nil : FilterReference(filterId: filterId, lutFileName: "luts/\(filterId).cube")
+            
+            let editingConfig = EditingConfiguration(
+                frame: frameRef,
+                filter: filterRef
+            )
+            
+            // 3. Prepare pipeline dengan config terbaru
+            try await editing.prepare(sessionId: sessionId, configuration: editingConfig)
+            
+            // 4. Minta preview dari foto yang baru ditangkap
             let previewPhotos = await CapturedPhotoStore.shared.capturedPhotos
             if let firstPhoto = previewPhotos.first,
                let previewPath = firstPhoto.writeToTempFile() {
-                _ = try await editing.requestPreview(photoInput: previewPath, correlationId: correlationId)
+                let previewResult = try await editing.requestPreview(photoInput: previewPath, correlationId: correlationId)
+                self.activePreviewReference = previewResult.outputReference
             }
             
         case .acceptPreview:

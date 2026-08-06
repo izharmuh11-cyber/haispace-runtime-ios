@@ -22,13 +22,8 @@ public struct EditingView: View {
         public let name: String
     }
 
-    private let frames: [FrameOption] = [
-        FrameOption(id: "classic_white", name: "Classic White", colorHex: "#FFFFFF"),
-        FrameOption(id: "noir_black", name: "Noir Black", colorHex: "#111111"),
-        FrameOption(id: "warm_amber", name: "Warm Amber", colorHex: "#F5A623"),
-        FrameOption(id: "soft_cream", name: "Soft Cream", colorHex: "#F4EBD9")
-    ]
-
+    @State private var frames: [LocalAsset] = []
+    
     private let filters: [FilterOption] = [
         FilterOption(id: "original", name: "Original"),
         FilterOption(id: "warm_vibe", name: "Warm Vibe"),
@@ -36,9 +31,10 @@ public struct EditingView: View {
         FilterOption(id: "soft_glow", name: "Soft Glow")
     ]
 
-    @State private var selectedFrameId: String = "classic_white"
+    @State private var selectedFrameId: String = ""
     @State private var selectedFilterId: String = "original"
     @State private var selectedSegment: Int = 0 // 0: Frame, 1: Filter
+    @State private var isLoadingPreview: Bool = false
 
     public var body: some View {
         ZStack {
@@ -75,46 +71,59 @@ public struct EditingView: View {
                 .padding(.bottom, Spacing.section)
             }
         }
+        .onAppear {
+            let store = LocalAssetStore()
+            self.frames = store.getAllAssets().filter { $0.assetType == "FRAME" }
+            if let firstFrame = self.frames.first {
+                self.selectedFrameId = firstFrame.id
+                requestPreviewUpdate()
+            }
+        }
+        .onChange(of: selectedFrameId) { _, _ in
+            requestPreviewUpdate()
+        }
+        .onChange(of: selectedFilterId) { _, _ in
+            requestPreviewUpdate()
+        }
+    }
+    
+    private func requestPreviewUpdate() {
+        guard !selectedFrameId.isEmpty else { return }
+        isLoadingPreview = true
+        Task {
+            try? await appState.send(.updatePreview(frameId: selectedFrameId, filterId: selectedFilterId))
+            await MainActor.run { isLoadingPreview = false }
+        }
     }
 
     private var previewArea: some View {
-        let frameColor = Color(hex: frames.first(where: { $0.id == selectedFrameId })?.colorHex ?? "#FFFFFF")
-
-        return RoundedRectangle(cornerRadius: 18)
-            .fill(frameColor)
-            .overlay(
-                VStack(spacing: Spacing.md) {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(AppTheme.Surface.secondary)
-                        .overlay(
-                            Image(systemName: "person.2.fill")
-                                .font(.system(size: 40))
-                                .foregroundStyle(AppTheme.Brand.textPrimary.opacity(0.15))
-                        )
-                        .frame(height: 140)
-
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(AppTheme.Surface.secondary)
-                        .overlay(
-                            Image(systemName: "person.2.fill")
-                                .font(.system(size: 40))
-                                .foregroundStyle(AppTheme.Brand.textPrimary.opacity(0.15))
-                        )
-                        .frame(height: 140)
-
-                    HStack {
-                        Text("HAISPACE")
-                            .font(AppFont.caption)
-                            .foregroundStyle(frameColor == .white ? Color.black.opacity(0.6) : AppTheme.Brand.textPrimary.opacity(0.6))
-                            .tracking(2)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 4)
-                }
-                .padding(Spacing.lg)
-            )
-            .frame(width: 210, height: 360)
-            .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+        ZStack {
+            if let previewRef = appState.sessionContext.latestPreviewReference,
+               let uiImage = UIImage(contentsOfFile: previewRef) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 360)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+            } else {
+                // Fallback placeholder
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color.white)
+                    .overlay(
+                        ProgressView()
+                            .scaleEffect(1.5)
+                    )
+                    .frame(width: 210, height: 360)
+                    .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+            }
+            
+            if isLoadingPreview {
+                Color.black.opacity(0.3)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .overlay(ProgressView().tint(.white))
+            }
+        }
     }
 
     private var segmentPicker: some View {
@@ -151,19 +160,18 @@ public struct EditingView: View {
     @ViewBuilder
     private var optionsCarousel: some View {
         if selectedSegment == 0 {
-            HStack(spacing: Spacing.xl) {
-                ForEach(frames) { frame in
+            HStack(spacing: Spacing.md) {
+                ForEach(frames, id: \.id) { frame in
                     Button {
                         withAnimation(Motion.screen) { selectedFrameId = frame.id }
                     } label: {
-                        Circle()
-                            .fill(Color(hex: frame.colorHex))
-                            .frame(width: 44, height: 44)
-                            .overlay(
-                                Circle()
-                                    .stroke(selectedFrameId == frame.id ? AppTheme.Brand.gold : AppTheme.Brand.textPrimary.opacity(0.2), lineWidth: selectedFrameId == frame.id ? 3 : 1)
-                            )
-                            .shadow(color: .black.opacity(0.2), radius: 4)
+                        Text(frame.name)
+                            .font(AppFont.footnote)
+                            .foregroundStyle(selectedFrameId == frame.id ? AppTheme.Brand.textDark : AppTheme.Brand.textPrimary)
+                            .padding(.horizontal, Spacing.lg)
+                            .padding(.vertical, Spacing.sm)
+                            .background(selectedFrameId == frame.id ? AppTheme.Brand.textPrimary : AppTheme.Brand.textPrimary.opacity(0.1))
+                            .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Frame \(frame.name)")
