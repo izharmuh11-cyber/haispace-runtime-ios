@@ -31,12 +31,27 @@ public final class RuntimeTimelineLogger {
     
     public private(set) var events: [RuntimeTimelineEvent] = []
     
+    // M1 Audit: Session & Build Tracker
+    public let sessionId: String
+    
     // Helper untuk kompatibilitas dengan UI lama (BootstrapLoadingView)
     public var timeline: [String] {
         events.map { $0.displayString }
     }
     
-    private init() {}
+    private init() {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        self.sessionId = formatter.string(from: Date())
+        
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "E9"
+        
+        logEvent("==============================")
+        logEvent("SESSION STARTED", payload: self.sessionId)
+        logEvent("BUILD INFO", payload: "v\(appVersion) (\(buildNumber))")
+        logEvent("==============================")
+    }
     
     public func logEvent(_ type: String, payload: String? = nil) {
         let event = RuntimeTimelineEvent(timestamp: Date(), type: type, payload: payload)
