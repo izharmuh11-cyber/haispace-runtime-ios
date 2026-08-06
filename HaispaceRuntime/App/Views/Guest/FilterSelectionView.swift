@@ -111,8 +111,11 @@ struct FilterSelectionView: View {
                     
                     // Lanjut Button
                     Button(action: {
-                        // Terapkan filter id dan intensity ke AppState jika perlu, lalu lanjut
-                        appState.navigateTo(.delivery)
+                        // FIX E.10 Cleanup: Gunakan intent agar orchestrator maju ke .deliveryDispatch
+                        // sebelum observer (0.5s) memaksa route kembali ke .processing.
+                        Task {
+                            try? await appState.send(.applyFilter)
+                        }
                     }) {
                         HStack {
                             Text("Terapkan Filter")

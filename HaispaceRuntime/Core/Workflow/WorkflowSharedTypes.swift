@@ -33,6 +33,9 @@ public enum WorkflowIntent: Sendable {
     case triggerShutter
     case finishCapture
     case acceptPreview
+    /// Dipanggil setelah tamu mengkonfirmasi filter dari FilterSelectionView.
+    /// Memajukan state machine ke deliveryDispatch agar observer sinkron dengan UI.
+    case applyFilter
     case confirmPaymentSuccess
     case finishSession
     case cancelSessionByOperator

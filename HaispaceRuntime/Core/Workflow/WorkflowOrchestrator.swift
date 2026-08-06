@@ -467,6 +467,21 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 eventType: .deliveryStarted
             )
             self.currentStage = .deliveryDispatch
+        
+        case .applyFilter:
+            // FIX: Loop Delivery (Sprint E.10 Cleanup)
+            // FilterSelectionView memanggil intent ini saat tamu menekan "Terapkan Filter".
+            // Memajukan stage dari .exporting ke .deliveryDispatch agar background observer
+            // (yang polling setiap 0.5s) mendapatkan stage yang sinkron dengan route UI .delivery.
+            // Tanpa ini, observer akan terus override rute ke .processing karena stage masih .exporting.
+            guard let sessionId = activeSessionId else { return }
+            HaispaceLogger.info("[E10_CLEANUP] applyFilter: advancing exporting -> deliveryDispatch", category: "workflow")
+            SessionAuditTrail.append(
+                sessionId: sessionId.rawValue,
+                stage: .deliveryDispatch,
+                eventType: .deliveryStarted
+            )
+            self.currentStage = .deliveryDispatch
             
         case .finishSession:
             if let sessionId = activeSessionId {
