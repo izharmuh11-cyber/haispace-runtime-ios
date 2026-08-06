@@ -68,7 +68,7 @@ public actor CheckoutOrchestrator {
         _ = try await payment.requestPayment(
             sessionId: sessionId,
             correlationId: correlationId,
-            amount: PaymentAmount(amountValue: amount, method: .localQRIS),
+            amount: PaymentAmount(amountValue: Double(amount), method: .localQRIS),
             method: .localQRIS
         )
     }
