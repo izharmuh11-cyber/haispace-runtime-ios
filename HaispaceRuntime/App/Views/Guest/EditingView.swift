@@ -82,7 +82,7 @@ public struct EditingView: View {
                 self.selectedTemplateId = firstTemplate.id
                 
                 let store = LocalAssetStore()
-                if let asset = store.getAsset(byId: firstTemplate.frameAssetId) {
+                if let asset = store.getAsset(id: firstTemplate.frameAssetId) {
                     let fileURL = asset.fileURL(baseDirectory: store.baseDirectory())
                     let uiImage = UIImage(contentsOfFile: fileURL.path)
                     let decodeSuccess = uiImage != nil
@@ -199,21 +199,7 @@ public struct EditingView: View {
                             Button {
                                 withAnimation(Motion.screen) { selectedTemplateId = template.id }
                             } label: {
-                                VStack(spacing: 4) {
-                                    if let asset = LocalAssetStore().getAsset(byId: template.frameAssetId),
-                                       let uiImage = UIImage(contentsOfFile: asset.fileURL(baseDirectory: LocalAssetStore().baseDirectory()).path) {
-                                        Image(uiImage: uiImage)
-                                            .resizable()
-                                            .scaledToFit()
-                                            .frame(height: 60)
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                                    } else {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 40, height: 60)
-                                            .overlay(Text("No img").font(.system(size: 8)))
-                                    }
-                                }
+                                    TemplateThumbnailView(frameAssetId: template.frameAssetId)
                                 .padding(Spacing.xs)
                                 .background(selectedTemplateId == template.id ? AppTheme.Brand.primary.opacity(0.2) : Color.clear)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -245,6 +231,29 @@ public struct EditingView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Filter \(filter.name)")
                 }
+            }
+        }
+    }
+}
+
+struct TemplateThumbnailView: View {
+    let frameAssetId: String
+    private let store = LocalAssetStore()
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            if let asset = store.getAsset(id: frameAssetId),
+               let uiImage = UIImage(contentsOfFile: asset.fileURL(baseDirectory: store.baseDirectory()).path) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 60)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 40, height: 60)
+                    .overlay(Text("No img").font(.system(size: 8)))
             }
         }
     }
