@@ -306,9 +306,16 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             // Fallback for old selectFilter if any
             break
             
-        case .retryAssetSync(let frameId, let filterId):
-            await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][RETRY_ASSET_SYNC] frameId: \(frameId)")
+        case .retryAssetSync(let templateId, let filterId):
+            await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][RETRY_ASSET_SYNC] templateId: \(templateId)")
             self.activePreviewError = "Menyinkronkan ulang frame..."
+            
+            guard let template = TemplateStore.shared.templates.first(where: { $0.id == templateId }) else {
+                self.activePreviewError = "Template tidak ditemukan."
+                return
+            }
+            
+            let frameId = template.frameAssetId
             
             do {
                 let keyStore = DeviceKeyStore()
@@ -324,7 +331,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                         
                         // If success, clear error and trigger updatePreview again
                         self.activePreviewError = nil
-                        try await self.handleIntent(.updatePreview(frameId: frameId, filterId: filterId))
+                        try await self.handleIntent(.updatePreview(templateId: templateId, filterId: filterId))
                     } else {
                         self.activePreviewError = "Asset tidak ditemukan di Cloud Manifest."
                     }
@@ -335,8 +342,8 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 self.activePreviewError = "Gagal menyinkronkan frame: \(error.localizedDescription)"
             }
 
-        case .updatePreview(let frameId, let filterId):
-            await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][UPDATE_PREVIEW_ENTER] frameId: \(frameId), filterId: \(filterId)")
+        case .updatePreview(let templateId, let filterId):
+            await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][UPDATE_PREVIEW_ENTER] templateId: \(templateId), filterId: \(filterId)")
             await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][CURRENT_STAGE] stage: \(currentStage.rawValue)")
             
             let stagePass = (currentStage == .templateSelection || currentStage == .editingPreview)
@@ -350,7 +357,16 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             
             guard let sessionId = activeSessionId, let correlationId = currentCorrelationId else { return }
             await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][UPDATE_PREVIEW_GUARD_PASS] stage: \(currentStage.rawValue), correlationId: \(correlationId.rawValue)")
-            print("[E10_AUDIT] Preview render started (frame: \(frameId))")
+            print("[E10_AUDIT] Preview render started (templateId: \(templateId))")
+            
+            guard let template = TemplateStore.shared.templates.first(where: { $0.id == templateId }) else {
+                print("[E10_AUDIT] Template manifest not found for id: \(templateId)")
+                self.activePreviewReference = nil
+                self.activePreviewError = "Template metadata tidak ditemukan."
+                return
+            }
+            
+            let frameId = template.frameAssetId
             
             // 1. Dapatkan path Frame Asset dari LocalAssetStore
             let store = LocalAssetStore()
@@ -358,7 +374,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 print("[E10_AUDIT] Frame asset not found for id: \(frameId)")
                 await RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Workflow Resolved Path: FAILED (Asset Not Found in Store)")
                 self.activePreviewReference = nil
-                self.activePreviewError = "Frame tidak ditemukan di perangkat. Silakan coba sinkronisasi ulang."
+                self.activePreviewError = "Frame PNG tidak ditemukan di perangkat. Silakan coba sinkronisasi ulang."
                 return
             }
             let frameAssetPath = asset.fileURL(baseDirectory: store.baseDirectory()).path
@@ -368,6 +384,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             
             let editingConfig = EditingConfiguration(
                 frame: frameRef,
+                template: template,
                 filter: filterRef
             )
             

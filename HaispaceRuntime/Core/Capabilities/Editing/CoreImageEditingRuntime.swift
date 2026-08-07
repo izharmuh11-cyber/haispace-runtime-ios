@@ -168,25 +168,17 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         }
         
         var canvasSize: CGSize
-        var templateManifest: TemplateManifest? = nil
+        var templateManifest: TemplateManifest? = configuration.template
         
-        if let frameRef = configuration.frame {
-            let templateURL = URL(fileURLWithPath: frameRef.assetPath).appendingPathComponent("template.json")
-            if let data = try? Data(contentsOf: templateURL),
-               let manifest = try? JSONDecoder().decode(TemplateManifest.self, from: data) {
-                templateManifest = manifest
-                canvasSize = CGSize(width: manifest.canvas.width * scale, height: manifest.canvas.height * scale)
-            } else {
-                // Gunakan TemplateStore jika tidak ada json di disk
-                if let manifest = await TemplateStore.shared.templates.first(where: { $0.frameAssetId == frameRef.frameId }) {
-                    templateManifest = manifest
-                    canvasSize = CGSize(width: manifest.canvas.width * scale, height: manifest.canvas.height * scale)
-                } else {
-                    canvasSize = CGSize(width: 1080 * scale, height: 1440 * scale)
-                }
-            }
+        if templateManifest == nil, let frameRef = configuration.frame {
+            // Fallback lookup if template wasn't passed directly
+            templateManifest = await TemplateStore.shared.templates.first(where: { $0.frameAssetId == frameRef.frameId })
+        }
+        
+        if let manifest = templateManifest {
+            canvasSize = CGSize(width: manifest.canvas.width * scale, height: manifest.canvas.height * scale)
         } else {
-            canvasSize = CGSize(width: sourceSize.width * scale, height: sourceSize.height * scale)
+            canvasSize = CGSize(width: 1080 * scale, height: 1440 * scale)
         }
         
         let canvasRect = CGRect(origin: .zero, size: canvasSize)

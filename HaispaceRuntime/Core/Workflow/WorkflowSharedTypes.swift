@@ -29,8 +29,8 @@ public enum WorkflowIntent: Sendable {
     case acceptPhotoSelection(photoIds: [String])
     case selectTemplate(frameId: String)
     case selectFilter(filterId: String)
-    case updatePreview(frameId: String, filterId: String)
-    case retryAssetSync(frameId: String, filterId: String)
+    case updatePreview(templateId: String, filterId: String)
+    case retryAssetSync(templateId: String, filterId: String)
     case triggerShutter
     case finishCapture
     case acceptPreview

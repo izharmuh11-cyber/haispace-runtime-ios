@@ -7,17 +7,20 @@ import Foundation
 
 public struct EditingConfiguration: Codable, Sendable, Equatable {
     public let frame: FrameReference?
+    public let template: TemplateManifest?
     public let filter: FilterReference?
     public let exportFormat: ExportFormat
     public let jpegQuality: Double // 0.8 s/d 1.0
     
     public init(
         frame: FrameReference? = nil,
+        template: TemplateManifest? = nil,
         filter: FilterReference? = nil,
         exportFormat: ExportFormat = .jpeg,
         jpegQuality: Double = 0.9
     ) {
         self.frame = frame
+        self.template = template
         self.filter = filter
         self.exportFormat = exportFormat
         self.jpegQuality = jpegQuality

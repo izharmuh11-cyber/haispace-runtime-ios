@@ -113,14 +113,11 @@ public struct EditingView: View {
     
     private func requestPreviewUpdate() {
         guard !selectedTemplateId.isEmpty else { return }
-        let selectedTemplate = templateStore.templates.first(where: { $0.id == selectedTemplateId })
-        let frameId = selectedTemplate?.frameAssetId ?? ""
-        RuntimeTimelineLogger.shared.logEvent("[UI][PREVIEW_REQUEST] templateId: \(selectedTemplateId), frameId: \(frameId), filterId: \(selectedFilterId)")
-        print("[E10_AUDIT] Preview render requested for template: \(selectedTemplateId), frame: \(frameId), filter: \(selectedFilterId)")
+        RuntimeTimelineLogger.shared.logEvent("[UI][PREVIEW_REQUEST] templateId: \(selectedTemplateId), filterId: \(selectedFilterId)")
+        print("[E10_AUDIT] Preview render requested for template: \(selectedTemplateId), filter: \(selectedFilterId)")
         isLoadingPreview = true
         Task {
-            // Tetap pass frameId ke system yang ada agar tidak memecah CoreImageEditingRuntime
-            try? await appState.send(.updatePreview(frameId: frameId, filterId: selectedFilterId))
+            try? await appState.send(.updatePreview(templateId: selectedTemplateId, filterId: selectedFilterId))
             await MainActor.run { isLoadingPreview = false }
         }
     }
@@ -143,8 +140,7 @@ public struct EditingView: View {
                         .padding(.horizontal, Spacing.lg)
                     
                     Button("Coba Lagi") {
-                        let frameId = templateStore.templates.first(where: { $0.id == selectedTemplateId })?.frameAssetId ?? ""
-                        Task { try? await appState.send(.retryAssetSync(frameId: frameId, filterId: selectedFilterId)) }
+                        Task { try? await appState.send(.retryAssetSync(templateId: selectedTemplateId, filterId: selectedFilterId)) }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.red)
