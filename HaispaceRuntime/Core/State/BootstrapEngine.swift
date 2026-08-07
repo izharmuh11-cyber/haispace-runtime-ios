@@ -63,11 +63,9 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
             let deviceToken = keyStore.getDeviceToken()
             
             var debugEventId: String? = nil
-            #if DEBUG
-            // DYNAMIC MANIFEST SYNC: Gunakan Event ID dari UserDefaults jika ada, atau fallback ke "latest"
-            // agar iPad otomatis sync Event terbaru yang diedit di Mission Control tanpa hardcode ID.
-            debugEventId = UserDefaults.standard.string(forKey: "DEBUG_EVENT_ID") ?? "latest"
-            #endif
+            if deviceToken == nil {
+                debugEventId = UserDefaults.standard.string(forKey: "DEBUG_EVENT_ID") ?? "latest"
+            }
             
             if deviceToken != nil || debugEventId != nil {
                 if deviceToken != nil {
