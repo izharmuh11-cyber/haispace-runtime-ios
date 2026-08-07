@@ -310,7 +310,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][RETRY_ASSET_SYNC] templateId: \(templateId)")
             self.activePreviewError = "Menyinkronkan ulang frame..."
             
-            guard let template = TemplateStore.shared.templates.first(where: { $0.id == templateId }) else {
+            guard let template = await TemplateStore.shared.templates.first(where: { $0.id == templateId }) else {
                 self.activePreviewError = "Template tidak ditemukan."
                 return
             }
@@ -359,7 +359,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][UPDATE_PREVIEW_GUARD_PASS] stage: \(currentStage.rawValue), correlationId: \(correlationId.rawValue)")
             print("[E10_AUDIT] Preview render started (templateId: \(templateId))")
             
-            guard let template = TemplateStore.shared.templates.first(where: { $0.id == templateId }) else {
+            guard let template = await TemplateStore.shared.templates.first(where: { $0.id == templateId }) else {
                 print("[E10_AUDIT] Template manifest not found for id: \(templateId)")
                 self.activePreviewReference = nil
                 self.activePreviewError = "Template metadata tidak ditemukan."
