@@ -24,18 +24,31 @@ public actor ManifestService {
         self.session = session
     }
     
-    /// Mengambil Manifest terbaru dari Cloud API menggunakan Device JWT
-    public func fetchLatestManifest(deviceToken: String) async throws -> EventRuntimeResponse? {
+    /// Mengambil Manifest terbaru dari Cloud API menggunakan Device JWT atau Event ID publik di mode Debug
+    public func fetchLatestManifest(deviceToken: String?, debugEventId: String? = nil) async throws -> EventRuntimeResponse? {
         let logger = await RuntimeTimelineLogger.shared
         await logger.auditLog(step: "Manifest Request", status: "START")
         
-        // Mengikuti spesifikasi E.6: GET /devices/me/event
-        let endpoint = baseURL.appendingPathComponent("/devices/me/event")
+        let endpoint: URL
+        var request: URLRequest
         
-        var request = URLRequest(url: endpoint)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("Bearer \(deviceToken)", forHTTPHeaderField: "Authorization")
+        if let token = deviceToken {
+            // Mengikuti spesifikasi E.6: GET /devices/me/event
+            endpoint = baseURL.appendingPathComponent("/devices/me/event")
+            request = URLRequest(url: endpoint)
+            request.httpMethod = "GET"
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        } else if let eventId = debugEventId {
+            // Publik endpoint untuk mode Debug
+            endpoint = baseURL.appendingPathComponent("/events/public/\(eventId)/manifest")
+            request = URLRequest(url: endpoint)
+            request.httpMethod = "GET"
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+        } else {
+            await logger.auditLog(step: "Manifest Request", status: "FAILED", detail: "No Token or Event ID")
+            return nil
+        }
         
         let (data, response) = try await session.data(for: request)
         

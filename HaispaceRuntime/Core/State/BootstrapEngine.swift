@@ -60,10 +60,24 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
             logger.logEvent("MANIFEST DOWNLOAD STARTED")
             
             let keyStore = DeviceKeyStore()
-            if let token = keyStore.getDeviceToken() {
-                logger.auditLog(step: "Device JWT Loaded", status: "SUCCESS")
+            let deviceToken = keyStore.getDeviceToken()
+            
+            var debugEventId: String? = nil
+            #if DEBUG
+            // FIX M1 E2E: Gunakan mock event ID (sama dengan yang di-set di AppState.swift)
+            // agar bisa sync manifest/asset dari Mission Control meski tanpa proses pairing.
+            debugEventId = "event-test-001"
+            #endif
+            
+            if deviceToken != nil || debugEventId != nil {
+                if deviceToken != nil {
+                    logger.auditLog(step: "Device JWT Loaded", status: "SUCCESS")
+                } else {
+                    logger.auditLog(step: "Device JWT Missing", status: "INFO", detail: "Using Debug Event ID")
+                    logger.logEvent("JWT MISSING - USING DEBUG EVENT ID: \(debugEventId ?? "")")
+                }
                 
-                if let eventRuntime = try await manifestService.fetchLatestManifest(deviceToken: token) {
+                if let eventRuntime = try await manifestService.fetchLatestManifest(deviceToken: deviceToken, debugEventId: debugEventId) {
                     if eventRuntime.status == "IDLE" {
                         logger.logEvent("EVENT IS IDLE")
                     } else {
