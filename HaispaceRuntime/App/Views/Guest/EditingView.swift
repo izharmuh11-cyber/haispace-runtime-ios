@@ -115,6 +115,7 @@ public struct EditingView: View {
         guard !selectedTemplateId.isEmpty else { return }
         let selectedTemplate = templateStore.templates.first(where: { $0.id == selectedTemplateId })
         let frameId = selectedTemplate?.frameAssetId ?? ""
+        RuntimeTimelineLogger.shared.logEvent("[UI][PREVIEW_REQUEST] templateId: \(selectedTemplateId), frameId: \(frameId), filterId: \(selectedFilterId)")
         print("[E10_AUDIT] Preview render requested for template: \(selectedTemplateId), frame: \(frameId), filter: \(selectedFilterId)")
         isLoadingPreview = true
         Task {
@@ -126,15 +127,30 @@ public struct EditingView: View {
 
     private var previewArea: some View {
         ZStack {
-            if let previewRef = appState.sessionContext.latestPreviewReference,
-               let uiImage = UIImage(contentsOfFile: previewRef) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 360)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                    .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+            if let previewRef = appState.sessionContext.latestPreviewReference {
+                let _ = RuntimeTimelineLogger.shared.logEvent("[UI][PREVIEW_IMAGE_LOAD] path: \(previewRef)")
+                if let uiImage = UIImage(contentsOfFile: previewRef) {
+                    let _ = RuntimeTimelineLogger.shared.logEvent("[UI][PREVIEW_IMAGE_LOAD_SUCCESS] size: \(uiImage.size.width)x\(uiImage.size.height)")
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 360)
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                        .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+                } else {
+                    let fileExists = FileManager.default.fileExists(atPath: previewRef)
+                    let _ = RuntimeTimelineLogger.shared.logEvent("[UI][PREVIEW_IMAGE_LOAD_FAIL] path: \(previewRef), fileExists: \(fileExists)")
+                    RoundedRectangle(cornerRadius: 18)
+                        .fill(Color.white)
+                        .overlay(
+                            ProgressView()
+                                .scaleEffect(1.5)
+                        )
+                        .frame(width: 210, height: 360)
+                        .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+                }
             } else {
+                let _ = RuntimeTimelineLogger.shared.logEvent("[UI][PREVIEW_IMAGE_LOAD_FAIL] latestPreviewReference is NIL")
                 // Fallback placeholder
                 RoundedRectangle(cornerRadius: 18)
                     .fill(Color.white)

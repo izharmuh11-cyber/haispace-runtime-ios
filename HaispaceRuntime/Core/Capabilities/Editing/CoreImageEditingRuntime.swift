@@ -142,10 +142,15 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         correlationId: CorrelationID,
         scale: CGFloat,
         quality: Double,
-        suffix: String
+        suffix: String,
+        isPreview: Bool
     ) async throws -> (path: String, width: Int, height: Int) {
         guard let context = ciContext else {
             throw EditingRuntimeError.pipelineNotPrepared
+        }
+        
+        Task { @MainActor in
+            RuntimeTimelineLogger.shared.logEvent("[RENDER][START] correlationId: \(correlationId.rawValue), photoInputsCount: \(photoInputs.count), isPreview: \(isPreview)")
         }
         
         guard let firstPhotoPath = photoInputs.first,
@@ -165,8 +170,7 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
                 canvasSize = CGSize(width: manifest.canvas.width * scale, height: manifest.canvas.height * scale)
             } else {
                 // Gunakan TemplateStore jika tidak ada json di disk
-                if let storeId = frameRef.frameId.split(separator: "_").last, // Or something similar, actually let's just fetch by frameId
-                   let manifest = await TemplateStore.shared.templates.first(where: { $0.frameAssetId == frameRef.frameId }) {
+                if let manifest = await TemplateStore.shared.templates.first(where: { $0.frameAssetId == frameRef.frameId }) {
                     templateManifest = manifest
                     canvasSize = CGSize(width: manifest.canvas.width * scale, height: manifest.canvas.height * scale)
                 } else {
@@ -214,6 +218,7 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         let compositeDecode = UIImage(contentsOfFile: outputURL.path) != nil
         
         Task { @MainActor in
+            RuntimeTimelineLogger.shared.logEvent("[RENDER][OUTPUT_PATH] path: \(outputURL.path), exists: \(exists), size: \(fileSize)")
             RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] compositeExtent = \(Int(canvasSize.width))x\(Int(canvasSize.height))")
             RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] outputFileExists = \(exists)")
             RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] outputFileSize = \(fileSize)")

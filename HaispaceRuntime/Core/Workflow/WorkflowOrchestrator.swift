@@ -306,7 +306,20 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             break
             
         case .updatePreview(let frameId, let filterId):
-            guard currentStage == .templateSelection, let sessionId = activeSessionId, let correlationId = currentCorrelationId else { return }
+            await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][UPDATE_PREVIEW_ENTER] frameId: \(frameId), filterId: \(filterId)")
+            await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][CURRENT_STAGE] stage: \(currentStage.rawValue)")
+            
+            let stagePass = (currentStage == .templateSelection)
+            let sessionPass = (activeSessionId != nil)
+            let correlationPass = (currentCorrelationId != nil)
+            
+            if !stagePass || !sessionPass || !correlationPass {
+                await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][UPDATE_PREVIEW_GUARD_FAIL] stagePass: \(stagePass) (stage: \(currentStage.rawValue)), sessionIdPresent: \(sessionPass), correlationIdPresent: \(correlationPass)")
+                return
+            }
+            
+            guard let sessionId = activeSessionId, let correlationId = currentCorrelationId else { return }
+            await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][UPDATE_PREVIEW_GUARD_PASS] stage: \(currentStage.rawValue), correlationId: \(correlationId.rawValue)")
             print("[E10_AUDIT] Preview render started (frame: \(frameId))")
             
             // 1. Dapatkan path Frame Asset dari LocalAssetStore
@@ -344,6 +357,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             if !previewPaths.isEmpty {
                 let previewResult = try await editing.requestPreview(photoInputs: previewPaths, correlationId: correlationId)
                 self.activePreviewReference = previewResult.outputReference
+                await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][ACTIVE_PREVIEW_REFERENCE] path: \(previewResult.outputReference)")
                 print("[E10_AUDIT] Preview render finished (output: \(previewResult.outputReference))")
             }
             

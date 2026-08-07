@@ -148,6 +148,7 @@ final class AppState {
             let guest = await activeSession.identity.guest
             let remaining = await runtime.orchestrator.sessionTimerRemaining
             let previewRef = await runtime.orchestrator.activePreviewReference
+            RuntimeTimelineLogger.shared.logEvent("[APPSTATE][LATEST_PREVIEW_REFERENCE] path: \(previewRef ?? "nil")")
             sessionContext = SessionContext(
                 maxPhotoCount: policy.maxCount,
                 minPhotoCount: policy.minSelectionCount,
