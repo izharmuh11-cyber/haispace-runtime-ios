@@ -188,18 +188,25 @@ public struct EditingView: View {
     @ViewBuilder
     private var optionsCarousel: some View {
         if selectedSegment == 0 {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Spacing.md) {
-                    if templateStore.templates.isEmpty {
-                        Text("No Templates Available")
-                            .font(AppFont.footnote)
-                            .foregroundStyle(AppTheme.Brand.textSecondary)
-                    } else {
-                        ForEach(templateStore.templates, id: \.id) { template in
-                            Button {
-                                withAnimation(Motion.screen) { selectedTemplateId = template.id }
-                            } label: {
-                                    TemplateThumbnailView(frameAssetId: template.frameAssetId)
+            templatesCarousel
+        } else {
+            filtersCarousel
+        }
+    }
+
+    private var templatesCarousel: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.md) {
+                if templateStore.templates.isEmpty {
+                    Text("No Templates Available")
+                        .font(AppFont.footnote)
+                        .foregroundStyle(AppTheme.Brand.textSecondary)
+                } else {
+                    ForEach(templateStore.templates, id: \.id) { template in
+                        Button {
+                            withAnimation(Motion.screen) { selectedTemplateId = template.id }
+                        } label: {
+                            TemplateThumbnailView(frameAssetId: template.frameAssetId)
                                 .padding(Spacing.xs)
                                 .background(selectedTemplateId == template.id ? AppTheme.Brand.primary.opacity(0.2) : Color.clear)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -207,30 +214,31 @@ public struct EditingView: View {
                                     RoundedRectangle(cornerRadius: 12)
                                         .stroke(selectedTemplateId == template.id ? AppTheme.Brand.primary : Color.clear, lineWidth: 2)
                                 )
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Template \(template.name)")
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Template \(template.name)")
                     }
                 }
             }
-        } else {
-            HStack(spacing: Spacing.md) {
-                ForEach(filters) { filter in
-                    Button {
-                        withAnimation(Motion.screen) { selectedFilterId = filter.id }
-                    } label: {
-                        Text(filter.name)
-                            .font(AppFont.footnote)
-                            .foregroundStyle(selectedFilterId == filter.id ? AppTheme.Brand.textDark : AppTheme.Brand.textPrimary)
-                            .padding(.horizontal, Spacing.lg)
-                            .padding(.vertical, Spacing.sm)
-                            .background(selectedFilterId == filter.id ? AppTheme.Brand.textPrimary : AppTheme.Brand.textPrimary.opacity(0.1))
-                            .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Filter \(filter.name)")
+        }
+    }
+
+    private var filtersCarousel: some View {
+        HStack(spacing: Spacing.md) {
+            ForEach(filters) { filter in
+                Button {
+                    withAnimation(Motion.screen) { selectedFilterId = filter.id }
+                } label: {
+                    Text(filter.name)
+                        .font(AppFont.footnote)
+                        .foregroundStyle(selectedFilterId == filter.id ? AppTheme.Brand.textDark : AppTheme.Brand.textPrimary)
+                        .padding(.horizontal, Spacing.lg)
+                        .padding(.vertical, Spacing.sm)
+                        .background(selectedFilterId == filter.id ? AppTheme.Brand.textPrimary : AppTheme.Brand.textPrimary.opacity(0.1))
+                        .clipShape(Capsule())
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Filter \(filter.name)")
             }
         }
     }
