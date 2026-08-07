@@ -74,7 +74,7 @@ public struct EditingView: View {
         .onAppear {
             print("[E10_AUDIT] EditingView appeared")
             let store = LocalAssetStore()
-            self.frames = store.getAllAssets().filter { $0.assetType == "FRAME" }
+            self.frames = store.getAllAssets().filter { $0.role.lowercased() == "frame" || $0.assetType.lowercased() == "frame" }
             print("[E10_AUDIT] Frame loaded (count: \(self.frames.count))")
             if let firstFrame = self.frames.first {
                 self.selectedFrameId = firstFrame.id
