@@ -203,24 +203,28 @@ public struct EditingView: View {
                         .foregroundStyle(AppTheme.Brand.textSecondary)
                 } else {
                     ForEach(templateStore.templates, id: \.id) { template in
-                        Button {
-                            withAnimation(Motion.screen) { selectedTemplateId = template.id }
-                        } label: {
-                            TemplateThumbnailView(frameAssetId: template.frameAssetId)
-                                .padding(Spacing.xs)
-                                .background(selectedTemplateId == template.id ? AppTheme.Brand.primary.opacity(0.2) : Color.clear)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(selectedTemplateId == template.id ? AppTheme.Brand.primary : Color.clear, lineWidth: 2)
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Template \(template.name)")
+                        templateButton(for: template)
                     }
                 }
             }
         }
+    }
+    
+    private func templateButton(for template: TemplateManifest) -> some View {
+        Button {
+            withAnimation(Motion.screen) { selectedTemplateId = template.id }
+        } label: {
+            TemplateThumbnailView(frameAssetId: template.frameAssetId)
+                .padding(Spacing.xs)
+                .background(selectedTemplateId == template.id ? AppTheme.Brand.primary.opacity(0.2) : Color.clear)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(selectedTemplateId == template.id ? AppTheme.Brand.primary : Color.clear, lineWidth: 2)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Template \(template.name)")
     }
 
     private var filtersCarousel: some View {
