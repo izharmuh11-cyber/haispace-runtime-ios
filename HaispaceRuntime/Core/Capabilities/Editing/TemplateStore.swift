@@ -40,7 +40,7 @@ public class TemplateStore: ObservableObject {
             let data = try JSONEncoder().encode(templates)
             try data.write(to: storageURL)
         } catch {
-            HaispaceLogger.error("[TemplateStore] Failed to save to disk: \(error.localizedDescription)", category: "template")
+            HaispaceLogger.error(error)
         }
     }
     
@@ -52,7 +52,7 @@ public class TemplateStore: ObservableObject {
                 HaispaceLogger.info("[TemplateStore] Loaded \(self.templates.count) templates from disk.", category: "template")
             }
         } catch {
-            HaispaceLogger.error("[TemplateStore] Failed to load from disk: \(error.localizedDescription)", category: "template")
+            HaispaceLogger.error(error)
         }
     }
 }
