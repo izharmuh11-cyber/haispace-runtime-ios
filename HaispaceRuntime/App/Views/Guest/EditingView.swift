@@ -216,11 +216,11 @@ public struct EditingView: View {
         } label: {
             TemplateThumbnailView(frameAssetId: template.frameAssetId)
                 .padding(Spacing.xs)
-                .background(selectedTemplateId == template.id ? AppTheme.Brand.primary.opacity(0.2) : Color.clear)
+                .background(selectedTemplateId == template.id ? AppTheme.Brand.gold.opacity(0.2) : Color.clear)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(selectedTemplateId == template.id ? AppTheme.Brand.primary : Color.clear, lineWidth: 2)
+                        .stroke(selectedTemplateId == template.id ? AppTheme.Brand.gold : Color.clear, lineWidth: 2)
                 )
         }
         .buttonStyle(.plain)
