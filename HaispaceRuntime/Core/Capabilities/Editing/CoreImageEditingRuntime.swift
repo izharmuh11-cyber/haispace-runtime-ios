@@ -283,14 +283,29 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         }
         
         // Overlay the frame PNG
-        let frameURL = URL(fileURLWithPath: frameRef.assetPath).appendingPathComponent("frame.png")
-        if FileManager.default.fileExists(atPath: frameURL.path),
-           let frameImage = CIImage(contentsOf: frameURL) {
+        // FORENSIC LOGGING
+        RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Target Frame Path: \(frameRef.assetPath)")
+        
+        let frameURL: URL
+        if frameRef.assetPath.lowercased().hasSuffix(".png") {
+            frameURL = URL(fileURLWithPath: frameRef.assetPath)
+        } else {
+            frameURL = URL(fileURLWithPath: frameRef.assetPath).appendingPathComponent("frame.png")
+        }
+        
+        let frameExists = FileManager.default.fileExists(atPath: frameURL.path)
+        let frameSize = (try? FileManager.default.attributesOfItem(atPath: frameURL.path)[.size] as? Int64) ?? 0
+        RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Frame Image Exists: \(frameExists) | Bytes: \(frameSize) | URL: \(frameURL.path)")
+        
+        if frameExists, let frameImage = CIImage(contentsOf: frameURL) {
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Success: TRUE | Size: \(frameImage.extent.width)x\(frameImage.extent.height)")
             let frameScaled = frameImage.transformed(by: CGAffineTransform(
                 scaleX: canvasSize.width / frameImage.extent.width,
                 y: canvasSize.height / frameImage.extent.height
             ))
             canvasImage = frameScaled.composited(over: canvasImage)
+        } else {
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Success: FALSE")
         }
         
         return canvasImage.cropped(to: CGRect(origin: .zero, size: canvasSize))

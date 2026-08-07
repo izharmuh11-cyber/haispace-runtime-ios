@@ -74,11 +74,23 @@ public struct EditingView: View {
         .onAppear {
             print("[E10_AUDIT] EditingView appeared")
             let store = LocalAssetStore()
-            self.frames = store.getAllAssets().filter { $0.role.lowercased() == "frame" || $0.assetType.lowercased() == "frame" }
+            let allAssets = store.getAllAssets()
+            self.frames = allAssets.filter { $0.role.lowercased() == "frame" || $0.assetType.lowercased() == "frame" }
+            
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC] EditingView All Assets: \(allAssets.count)")
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC] EditingView Frame Assets: \(self.frames.count)")
+            
             print("[E10_AUDIT] Frame loaded (count: \(self.frames.count))")
             if let firstFrame = self.frames.first {
                 self.selectedFrameId = firstFrame.id
+                let fileURL = firstFrame.fileURL(baseDirectory: store.baseDirectory()).path
+                let exists = FileManager.default.fileExists(atPath: fileURL)
+                let size = (try? FileManager.default.attributesOfItem(atPath: fileURL)[.size] as? Int64) ?? 0
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Selected Asset: \(firstFrame.id) | Exists: \(exists) | Bytes: \(size)")
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Local Path: \(fileURL)")
                 requestPreviewUpdate()
+            } else {
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Selected Asset: NONE (frames array is empty)")
             }
         }
         .onChange(of: selectedFrameId) { _, _ in
