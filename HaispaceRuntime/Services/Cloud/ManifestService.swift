@@ -105,5 +105,6 @@ public struct EventRuntimeResponse: Codable, Sendable {
     public let eventName: String
     public let publishedAt: String?
     public let assets: [CloudAssetDTO]?
+    public let templates: [TemplateManifest]?
 }
 

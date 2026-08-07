@@ -80,6 +80,13 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
                 if let eventRuntime = try await manifestService.fetchLatestManifest(deviceToken: deviceToken, debugEventId: debugEventId) {
                     logger.logEvent("MANIFEST READY", payload: "v\(eventRuntime.version)")
                     
+                    // SYNC TEMPLATES (Phase 4)
+                    if let templates = eventRuntime.templates, !templates.isEmpty {
+                        await TemplateStore.shared.ingest(templates: templates)
+                        logger.logEvent("TEMPLATE SYNC COMPLETED", payload: "\(templates.count) templates")
+                        await logger.auditLog(step: "Template Sync", status: "SUCCESS", detail: "\(templates.count) templates")
+                    }
+                    
                     // SYNC ASSETS
                     if let cloudAssets = eventRuntime.assets, !cloudAssets.isEmpty {
                         logger.logEvent("ASSET SYNC STARTED", payload: "\(cloudAssets.count) assets")
