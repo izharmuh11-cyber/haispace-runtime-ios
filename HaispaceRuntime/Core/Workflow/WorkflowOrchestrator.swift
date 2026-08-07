@@ -215,7 +215,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
 
             let correlationId = currentCorrelationId ?? CorrelationID()
             // EditingCapability menerima path dari PhotoReference — bukan singleton
-            let exportResult = try await editing.requestExport(photoInput: photoRef.sourcePath, correlationId: correlationId)
+            let exportResult = try await editing.requestExport(photoInputs: [photoRef.sourcePath], correlationId: correlationId)
             self.activePhotoId = exportResult.photoId
             self.activeOutputReference = exportResult.outputReference
 
@@ -333,11 +333,16 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             // 3. Prepare pipeline dengan config terbaru
             try await editing.prepare(sessionId: sessionId, configuration: editingConfig)
             
-            // 4. Minta preview dari foto yang baru ditangkap
+            // 4. Minta preview dari SEMUA foto yang ditangkap
             let previewPhotos = await CapturedPhotoStore.shared.capturedPhotos
-            if let firstPhoto = previewPhotos.first,
-               let previewPath = firstPhoto.writeToTempFile() {
-                let previewResult = try await editing.requestPreview(photoInput: previewPath, correlationId: correlationId)
+            var previewPaths: [String] = []
+            for photo in previewPhotos {
+                if let path = photo.writeToTempFile() {
+                    previewPaths.append(path)
+                }
+            }
+            if !previewPaths.isEmpty {
+                let previewResult = try await editing.requestPreview(photoInputs: previewPaths, correlationId: correlationId)
                 self.activePreviewReference = previewResult.outputReference
                 print("[E10_AUDIT] Preview render finished (output: \(previewResult.outputReference))")
             }
@@ -349,14 +354,18 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             print("[E10_AUDIT] Export full resolution started")
             self.currentStage = .exporting
 
-            // M-012.5 Audit: Gunakan PhotoReference — tidak ada lagi hardcoded path
+            // M-012.5 Audit: Gunakan semua foto
             let exportPhotos = await CapturedPhotoStore.shared.capturedPhotos
-            guard let firstPhoto = exportPhotos.first,
-                  let exportPhotoPath = firstPhoto.writeToTempFile() else {
+            var exportPaths: [String] = []
+            for photo in exportPhotos {
+                if let path = photo.writeToTempFile() {
+                    exportPaths.append(path)
+                }
+            }
+            if exportPaths.isEmpty {
                 throw WorkflowError.sessionNotActive
             }
-            let exportPhotoRef = PhotoReference(photoId: PhotoID(rawValue: firstPhoto.id), sourcePath: exportPhotoPath)
-            let exportResult = try await editing.requestExport(photoInput: exportPhotoRef.sourcePath, correlationId: correlationId)
+            let exportResult = try await editing.requestExport(photoInputs: exportPaths, correlationId: correlationId)
             self.activePhotoId = exportResult.photoId
             self.activeOutputReference = exportResult.outputReference
             

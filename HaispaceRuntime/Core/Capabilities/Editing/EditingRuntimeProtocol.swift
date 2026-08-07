@@ -14,14 +14,14 @@ public protocol EditingRuntimeProtocol: Sendable {
     
     /// Merender preview cepat (res terpotong / downsampled)
     func renderPreview(
-        photoInput: String,
+        photoInputs: [String],
         configuration: EditingConfiguration,
         correlationId: CorrelationID
     ) async throws -> PreviewResult
     
     /// Merender export full quality (12MP/48MP full render + frame + LUT)
     func renderExport(
-        photoInput: String,
+        photoInputs: [String],
         configuration: EditingConfiguration,
         correlationId: CorrelationID
     ) async throws -> ExportResult

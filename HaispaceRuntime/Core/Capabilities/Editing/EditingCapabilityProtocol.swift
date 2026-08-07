@@ -19,13 +19,13 @@ public protocol EditingCapabilityProtocol: Sendable {
     
     /// Meminta render Preview cepat (Low Latency)
     func requestPreview(
-        photoInput: String,
+        photoInputs: [String],
         correlationId: CorrelationID
     ) async throws -> PreviewResult
     
     /// Meminta render Export Full Quality (High Accuracy)
     func requestExport(
-        photoInput: String,
+        photoInputs: [String],
         correlationId: CorrelationID
     ) async throws -> ExportResult
     

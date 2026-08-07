@@ -68,7 +68,7 @@ public actor EditingCapability: @preconcurrency EditingCapabilityProtocol {
     
     /// Meminta render Preview cepat (Low Latency, Downsampled)
     public func requestPreview(
-        photoInput: String,
+        photoInputs: [String],
         correlationId: CorrelationID
     ) async throws -> PreviewResult {
         guard case .prepared(let sessionId, let config) = state else {
@@ -80,7 +80,7 @@ public actor EditingCapability: @preconcurrency EditingCapabilityProtocol {
         
         do {
             let result = try await runtime.renderPreview(
-                photoInput: photoInput,
+                photoInputs: photoInputs,
                 configuration: config,
                 correlationId: correlationId
             )
@@ -99,7 +99,7 @@ public actor EditingCapability: @preconcurrency EditingCapabilityProtocol {
     
     /// Meminta render Export Full Quality (High Accuracy 12MP/48MP)
     public func requestExport(
-        photoInput: String,
+        photoInputs: [String],
         correlationId: CorrelationID
     ) async throws -> ExportResult {
         guard case .prepared(let sessionId, let config) = state else {
@@ -111,7 +111,7 @@ public actor EditingCapability: @preconcurrency EditingCapabilityProtocol {
         
         do {
             let result = try await runtime.renderExport(
-                photoInput: photoInput,
+                photoInputs: photoInputs,
                 configuration: config,
                 correlationId: correlationId
             )

@@ -72,12 +72,27 @@ public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked
     public func requestCapture(correlationId: CorrelationID) async throws {
         // [1] Shutter Pressed is logged in ActiveSessionView
         
+        await RuntimeTimelineLogger.shared.logEvent("[FORENSIC][CAPTURE] capture requested")
+        
         let path = try await capturePipeline.capturePhoto()
+        await RuntimeTimelineLogger.shared.logEvent("[FORENSIC][CAPTURE] capture completed")
+        await RuntimeTimelineLogger.shared.logEvent("[FORENSIC][CAPTURE] photo path = \(path)")
+        
+        let exists = FileManager.default.fileExists(atPath: path)
+        let size = (try? FileManager.default.attributesOfItem(atPath: path)[.size] as? Int64) ?? 0
+        await RuntimeTimelineLogger.shared.logEvent("[FORENSIC][CAPTURE] fileExists = \(exists)")
+        await RuntimeTimelineLogger.shared.logEvent("[FORENSIC][CAPTURE] fileSize = \(size)")
+        
+        // Cek decode (hindari cache dengan UI image jika memori terbatas, tapi kita buat aman)
+        let decodeSuccess = UIImage(contentsOfFile: path) != nil
+        await RuntimeTimelineLogger.shared.logEvent("[FORENSIC][CAPTURE] UIImage decode = \(decodeSuccess)")
+        
         metrics = CameraMetrics(totalCaptures: metrics.totalCaptures + 1)
         
         // Simpan path ke CapturedPhotoStore agar View bisa mengaksesnya
         await CapturedPhotoStore.shared.appendCapture(path: path)
         
-        await RuntimeTimelineLogger.shared.logEvent("[6] CapturedPhotoStore Updated", payload: path)
+        let storeCount = await CapturedPhotoStore.shared.capturedPhotos.count
+        await RuntimeTimelineLogger.shared.logEvent("[FORENSIC][CAPTURE] CapturedPhotoStore count = \(storeCount)")
     }
 }

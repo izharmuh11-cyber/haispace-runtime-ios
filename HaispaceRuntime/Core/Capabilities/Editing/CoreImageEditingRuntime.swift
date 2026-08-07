@@ -64,7 +64,7 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
     }
     
     public func renderPreview(
-        photoInput: String,
+        photoInputs: [String],
         configuration: EditingConfiguration,
         correlationId: CorrelationID
     ) async throws -> PreviewResult {
@@ -72,7 +72,7 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         let previewScale: CGFloat = 0.25
         
         let (outputPath, width, height) = try await render(
-            photoInput: photoInput,
+            photoInputs: photoInputs,
             configuration: configuration,
             correlationId: correlationId,
             scale: previewScale,
@@ -91,14 +91,14 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
     }
     
     public func renderExport(
-        photoInput: String,
+        photoInputs: [String],
         configuration: EditingConfiguration,
         correlationId: CorrelationID
     ) async throws -> ExportResult {
         let startTime = Date()
         
         let (outputPath, width, height) = try await render(
-            photoInput: photoInput,
+            photoInputs: photoInputs,
             configuration: configuration,
             correlationId: correlationId,
             scale: 1.0,
@@ -136,7 +136,7 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
     // MARK: - Core Render Pipeline (Private)
     
     private func render(
-        photoInput: String,
+        photoInputs: [String],
         configuration: EditingConfiguration,
         correlationId: CorrelationID,
         scale: CGFloat,
@@ -147,11 +147,12 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             throw EditingRuntimeError.pipelineNotPrepared
         }
         
-        guard let sourceImage = CIImage(contentsOf: URL(fileURLWithPath: photoInput)) else {
-            throw EditingRuntimeError.photoNotFound(path: photoInput)
+        guard let firstPhotoPath = photoInputs.first,
+              let firstSourceImage = CIImage(contentsOf: URL(fileURLWithPath: firstPhotoPath)) else {
+            throw EditingRuntimeError.photoNotFound(path: photoInputs.first ?? "Empty photo list")
         }
         
-        let sourceSize = sourceImage.extent.size
+        let sourceSize = firstSourceImage.extent.size
         var canvasSize: CGSize
         var templateManifest: TemplateManifest? = nil
         
@@ -162,8 +163,14 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
                 templateManifest = manifest
                 canvasSize = CGSize(width: manifest.canvas.width * scale, height: manifest.canvas.height * scale)
             } else {
-                // Fallback for missing template.json
-                canvasSize = CGSize(width: 1080 * scale, height: 1440 * scale)
+                // Gunakan TemplateStore jika tidak ada json di disk
+                if let storeId = frameRef.frameId.split(separator: "_").last, // Or something similar, actually let's just fetch by frameId
+                   let manifest = await TemplateStore.shared.templates.first(where: { $0.frameAssetId == frameRef.frameId }) {
+                    templateManifest = manifest
+                    canvasSize = CGSize(width: manifest.canvas.width * scale, height: manifest.canvas.height * scale)
+                } else {
+                    canvasSize = CGSize(width: 1080 * scale, height: 1440 * scale)
+                }
             }
         } else {
             canvasSize = CGSize(width: sourceSize.width * scale, height: sourceSize.height * scale)
@@ -174,7 +181,7 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         
         if let frameRef = configuration.frame {
             compositeImage = try composeWithFrame(
-                sourceImage: sourceImage,
+                photoInputs: photoInputs,
                 frameRef: frameRef,
                 canvasSize: canvasSize,
                 scale: scale,
@@ -190,7 +197,7 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             let offsetX = (canvasSize.width - scaledW) / 2
             let offsetY = (canvasSize.height - scaledH) / 2
             
-            compositeImage = sourceImage
+            compositeImage = firstSourceImage
                 .transformed(by: CGAffineTransform(scaleX: fitScale, y: fitScale))
                 .transformed(by: CGAffineTransform(translationX: offsetX, y: offsetY))
                 .cropped(to: canvasRect)
@@ -200,6 +207,17 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         let outputURL = outputDirectory.appendingPathComponent(outputFilename)
         
         try writeJPEG(image: compositeImage, to: outputURL, quality: quality, context: context, canvasSize: canvasSize)
+        
+        let exists = FileManager.default.fileExists(atPath: outputURL.path)
+        let fileSize = (try? FileManager.default.attributesOfItem(atPath: outputURL.path)[.size] as? Int64) ?? 0
+        let compositeDecode = UIImage(contentsOfFile: outputURL.path) != nil
+        
+        Task { @MainActor in
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] compositeExtent = \(Int(canvasSize.width))x\(Int(canvasSize.height))")
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] outputFileExists = \(exists)")
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] outputFileSize = \(fileSize)")
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] compositeDecode = \(compositeDecode)")
+        }
         
         return (
             path: outputURL.path,
@@ -211,14 +229,13 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
     // MARK: - Frame Compositing
     
     private func composeWithFrame(
-        sourceImage: CIImage,
+        photoInputs: [String],
         frameRef: FrameReference,
         canvasSize: CGSize,
         scale: CGFloat,
         context: CIContext,
         template: TemplateManifest?
     ) throws -> CIImage {
-        let sourceSize = sourceImage.extent.size
         
         // Base canvas is clear
         var canvasImage = CIImage(color: CIColor.clear).cropped(to: CGRect(origin: .zero, size: canvasSize))
@@ -254,11 +271,16 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         let adjustment = SlotAdjustment(cropGravityX: 0.5, cropGravityY: 0.5, cropZoom: 1.0)
         
         // Draw the source image into each slot
-        for slot in frameSlots {
-            let drawRect = compositor.calculateAutoFitRect(imageSize: sourceSize, slot: slot, adjustment: adjustment)
+        for (index, slot) in frameSlots.enumerated() {
+            // Gunakan foto yang sesuai dengan slot, atau fallback ke foto terakhir
+            let photoPath = photoInputs[min(index, photoInputs.count - 1)]
+            guard let sourceImage = CIImage(contentsOf: URL(fileURLWithPath: photoPath)) else { continue }
+            let srcSize = sourceImage.extent.size
             
-            let scaleX = drawRect.drawWidth / sourceSize.width
-            let scaleY = drawRect.drawHeight / sourceSize.height
+            let drawRect = compositor.calculateAutoFitRect(imageSize: srcSize, slot: slot, adjustment: adjustment)
+            
+            let scaleX = drawRect.drawWidth / srcSize.width
+            let scaleY = drawRect.drawHeight / srcSize.height
             
             var positioned = sourceImage
                 .transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
@@ -280,6 +302,18 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             }
             
             canvasImage = positioned.composited(over: canvasImage)
+            
+            // FORENSIC LOGGING for each slot
+            Task { @MainActor in
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] slot[\(index)] = \(slot.x), \(slot.y), \(slot.width), \(slot.height), \(slot.rotationDegrees)")
+            }
+        }
+        
+        Task { @MainActor in
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] photoCount = \(photoInputs.count)")
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] templateId = \(template?.id ?? "fallback")")
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] canvas = \(canvasSize.width)x\(canvasSize.height)")
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] slotCount = \(frameSlots.count)")
         }
         
         // Overlay the frame PNG
@@ -303,7 +337,7 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         
         if frameExists, let frameImage = CIImage(contentsOf: frameURL) {
             Task { @MainActor in
-                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Success: TRUE | Size: \(frameImage.extent.width)x\(frameImage.extent.height)")
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] frameDecode = true")
             }
             let frameScaled = frameImage.transformed(by: CGAffineTransform(
                 scaleX: canvasSize.width / frameImage.extent.width,
@@ -312,7 +346,7 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             canvasImage = frameScaled.composited(over: canvasImage)
         } else {
             Task { @MainActor in
-                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Success: FALSE")
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] frameDecode = false")
             }
         }
         

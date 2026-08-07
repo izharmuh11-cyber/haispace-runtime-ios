@@ -188,7 +188,7 @@ public final class FrameEngineValidator: ObservableObject, @preconcurrency Capab
         
         do {
             let result = try await runtime.renderExport(
-                photoInput: photoPath,
+                photoInputs: [photoPath],
                 configuration: config,
                 correlationId: correlationId
             )

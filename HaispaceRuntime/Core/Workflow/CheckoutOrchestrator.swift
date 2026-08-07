@@ -55,7 +55,7 @@ public actor CheckoutOrchestrator {
         )
         try await editing.prepare(sessionId: sessionId, configuration: editingConfig)
         
-        let exportResult = try await editing.requestExport(photoInput: photoRef.sourcePath, correlationId: correlationId)
+        let exportResult = try await editing.requestExport(photoInputs: [photoRef.sourcePath], correlationId: correlationId)
         return (exportResult.photoId, exportResult.outputReference)
     }
     
