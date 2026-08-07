@@ -19,32 +19,22 @@ jobs:
       - name: Xcode Version
         run: xcodebuild -version
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install XcodeGen (Fast Binary)
+        run: |
+          curl -sL https://github.com/yonaskolb/XcodeGen/releases/download/2.42.0/xcodegen.zip -o xcodegen.zip
+          unzip -q xcodegen.zip
+          sudo mv xcodegen/bin/xcodegen /usr/local/bin/
+
+      - name: Cache DerivedData
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: ${{ runner.os }}-derived-data-${{ hashFiles('project.yml') }}
 
       - name: Generate Xcode Project
         run: xcodegen generate --spec project.yml
 
-      - name: Build for Simulator (Validation)
-        run: |
-          xcodebuild build \
-            -project HaispaceRuntime.xcodeproj \
-            -scheme HaispaceRuntime \
-            -destination 'generic/platform=iOS Simulator' \
-            -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            HSP_API_BASE_URL="https://api.haispaceproject.my.id" \
-            HSP_MIDTRANS_CLIENT_KEY="ci-placeholder" \
-            HSP_LICENSE_KEY="ci-placeholder" > build_sim.log 2>&1 || {
-              echo "=== BUILD ERRORS ==="
-              grep "error:" build_sim.log
-              echo "===================="
-              exit 1
-            }
-
-      - name: Build for Device (Unsigned)
+      - name: Build for Device (Unsigned IPA)
         run: |
           xcodebuild build \
             -project HaispaceRuntime.xcodeproj \
@@ -52,6 +42,8 @@ jobs:
             -sdk iphoneos \
             -configuration Release \
             -derivedDataPath build \
+            -jobs 4 \
+            COMPILER_INDEX_STORE_ENABLE=NO \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
