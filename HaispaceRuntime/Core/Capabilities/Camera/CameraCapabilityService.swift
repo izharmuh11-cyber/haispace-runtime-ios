@@ -4,6 +4,7 @@
 import Foundation
 import Observation
 import AVFoundation
+import UIKit
 
 @Observable
 public final class CameraCapabilityService: CameraCapabilityProtocol, @unchecked Sendable {

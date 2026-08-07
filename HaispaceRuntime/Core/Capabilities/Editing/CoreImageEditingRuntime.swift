@@ -19,6 +19,7 @@ import CoreImage
 import CoreGraphics
 import ImageIO
 import UniformTypeIdentifiers
+import UIKit
 
 // MARK: - CoreImageEditingRuntime
 
