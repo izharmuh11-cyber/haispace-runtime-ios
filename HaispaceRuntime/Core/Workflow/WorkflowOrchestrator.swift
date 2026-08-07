@@ -309,7 +309,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][UPDATE_PREVIEW_ENTER] frameId: \(frameId), filterId: \(filterId)")
             await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][CURRENT_STAGE] stage: \(currentStage.rawValue)")
             
-            let stagePass = (currentStage == .templateSelection)
+            let stagePass = (currentStage == .templateSelection || currentStage == .editingPreview)
             let sessionPass = (activeSessionId != nil)
             let correlationPass = (currentCorrelationId != nil)
             
