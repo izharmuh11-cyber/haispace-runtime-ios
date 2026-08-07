@@ -70,11 +70,11 @@ public class AssetSyncService {
                 throw AssetSyncError.checksumMismatch
             }
         }
-        await RuntimeTimelineLogger.shared.auditLog(step: "Checksum Validation", status: "SUCCESS", detail: "\(cloudAsset.id)")
+        await RuntimeTimelineLogger.shared.auditLog(step: "Checksum Validation", status: "SUCCESS", detail: "\(cloudAsset.assetId)")
         
         // Tentukan ekstensi dari URL aslinya
         let ext = url.pathExtension.isEmpty ? "bin" : url.pathExtension
-        let fileName = "\(cloudAsset.id).\(ext)"
+        let fileName = "\(cloudAsset.assetId).\(ext)"
         let finalRelativePath = "\(cloudAsset.role)/\(fileName)"
         
         let finalURL = store.baseDirectory().appendingPathComponent(finalRelativePath)
@@ -95,15 +95,15 @@ public class AssetSyncService {
         
         // Rekam ke LocalAssetStore
         let localAsset = LocalAsset(
-            id: cloudAsset.id,
+            id: cloudAsset.assetId,
             role: cloudAsset.role,
             name: cloudAsset.name,
-            assetType: cloudAsset.assetType,
+            assetType: cloudAsset.mimeType,
             relativePath: finalRelativePath,
             checksum: hashString // simpan checksum aktual
         )
         
         try store.saveAsset(asset: localAsset)
-        await RuntimeTimelineLogger.shared.auditLog(step: "Asset Saved", status: "SUCCESS", detail: "\(cloudAsset.id)")
+        await RuntimeTimelineLogger.shared.auditLog(step: "Asset Saved", status: "SUCCESS", detail: "\(cloudAsset.assetId)")
     }
 }
