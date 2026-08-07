@@ -284,7 +284,9 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         
         // Overlay the frame PNG
         // FORENSIC LOGGING
-        await RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Target Frame Path: \(frameRef.assetPath)")
+        Task { @MainActor in
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Target Frame Path: \(frameRef.assetPath)")
+        }
         
         let frameURL: URL
         if frameRef.assetPath.lowercased().hasSuffix(".png") {
@@ -295,17 +297,23 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         
         let frameExists = FileManager.default.fileExists(atPath: frameURL.path)
         let frameSize = (try? FileManager.default.attributesOfItem(atPath: frameURL.path)[.size] as? Int64) ?? 0
-        await RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Frame Image Exists: \(frameExists) | Bytes: \(frameSize) | URL: \(frameURL.path)")
+        Task { @MainActor in
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Frame Image Exists: \(frameExists) | Bytes: \(frameSize) | URL: \(frameURL.path)")
+        }
         
         if frameExists, let frameImage = CIImage(contentsOf: frameURL) {
-            await RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Success: TRUE | Size: \(frameImage.extent.width)x\(frameImage.extent.height)")
+            Task { @MainActor in
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Success: TRUE | Size: \(frameImage.extent.width)x\(frameImage.extent.height)")
+            }
             let frameScaled = frameImage.transformed(by: CGAffineTransform(
                 scaleX: canvasSize.width / frameImage.extent.width,
                 y: canvasSize.height / frameImage.extent.height
             ))
             canvasImage = frameScaled.composited(over: canvasImage)
         } else {
-            await RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Success: FALSE")
+            Task { @MainActor in
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Success: FALSE")
+            }
         }
         
         return canvasImage.cropped(to: CGRect(origin: .zero, size: canvasSize))
