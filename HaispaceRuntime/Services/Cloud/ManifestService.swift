@@ -41,7 +41,11 @@ public actor ManifestService {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         } else if let eventId = debugEventId {
             // Publik endpoint untuk mode Debug
-            endpoint = baseURL.appendingPathComponent("/events/public/\(eventId)/manifest")
+            if eventId == "latest" {
+                endpoint = baseURL.appendingPathComponent("/events/public/latest/manifest")
+            } else {
+                endpoint = baseURL.appendingPathComponent("/events/public/\(eventId)/manifest")
+            }
             request = URLRequest(url: endpoint)
             request.httpMethod = "GET"
             request.setValue("application/json", forHTTPHeaderField: "Accept")

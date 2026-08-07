@@ -64,9 +64,9 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
             
             var debugEventId: String? = nil
             #if DEBUG
-            // FIX M1 E2E: Gunakan mock event ID (sama dengan yang di-set di AppState.swift)
-            // agar bisa sync manifest/asset dari Mission Control meski tanpa proses pairing.
-            debugEventId = "event-test-001"
+            // DYNAMIC MANIFEST SYNC: Gunakan Event ID dari UserDefaults jika ada, atau fallback ke "latest"
+            // agar iPad otomatis sync Event terbaru yang diedit di Mission Control tanpa hardcode ID.
+            debugEventId = UserDefaults.standard.string(forKey: "DEBUG_EVENT_ID") ?? "latest"
             #endif
             
             if deviceToken != nil || debugEventId != nil {
