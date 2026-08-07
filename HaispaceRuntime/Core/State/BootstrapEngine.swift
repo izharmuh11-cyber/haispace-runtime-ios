@@ -78,19 +78,15 @@ public final class BootstrapEngine: ObservableObject, @unchecked Sendable {
                 }
                 
                 if let eventRuntime = try await manifestService.fetchLatestManifest(deviceToken: deviceToken, debugEventId: debugEventId) {
-                    if eventRuntime.status == "IDLE" {
-                        logger.logEvent("EVENT IS IDLE")
-                    } else {
-                        logger.logEvent("MANIFEST READY", payload: "v\(eventRuntime.manifest?.version ?? 0)")
-                        
-                        // SYNC ASSETS
-                        if let cloudAssets = eventRuntime.assets, !cloudAssets.isEmpty {
-                            logger.logEvent("ASSET SYNC STARTED", payload: "\(cloudAssets.count) assets")
-                            let store = LocalAssetStore()
-                            let syncService = AssetSyncService(store: store)
-                            try await syncService.syncAssets(from: cloudAssets)
-                            logger.logEvent("ASSET SYNC COMPLETED")
-                        }
+                    logger.logEvent("MANIFEST READY", payload: "v\(eventRuntime.version)")
+                    
+                    // SYNC ASSETS
+                    if let cloudAssets = eventRuntime.assets, !cloudAssets.isEmpty {
+                        logger.logEvent("ASSET SYNC STARTED", payload: "\(cloudAssets.count) assets")
+                        let store = LocalAssetStore()
+                        let syncService = AssetSyncService(store: store)
+                        try await syncService.syncAssets(from: cloudAssets)
+                        logger.logEvent("ASSET SYNC COMPLETED")
                     }
                 }
             } else {

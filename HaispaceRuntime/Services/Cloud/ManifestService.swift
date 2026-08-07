@@ -80,15 +80,9 @@ public actor ManifestService {
         let eventRuntime = try decoder.decode(EventRuntimeResponse.self, from: data)
         await logger.auditLog(step: "Manifest Request", status: "SUCCESS")
         
-        // Cek IDLE
-        if eventRuntime.status == "IDLE" {
-            await logger.auditLog(step: "Event Status", status: "INFO", detail: "IDLE")
-            HaispaceLogger.info("[ManifestService] Event is IDLE.", category: "cloud")
-            return eventRuntime
-        }
         await logger.auditLog(step: "Event Status", status: "SUCCESS", detail: "ACTIVE")
         
-        guard let manifestVersion = eventRuntime.manifest?.version else { return eventRuntime }
+        let manifestVersion = eventRuntime.version
         
         // Rule V-001: Hanya update jika manifestVersion Cloud > Local Version
         guard manifestVersion > currentLocalVersion else {
@@ -105,31 +99,11 @@ public actor ManifestService {
 // MARK: - DTO Manifest Response (Strict Contract)
 
 public struct EventRuntimeResponse: Codable, Sendable {
-    public let status: String
-    public let event: EventInfo?
-    public let manifest: ManifestInfo?
-    public let packages: [PackageInfo]?
-    public let assets: [CloudAssetDTO]?
-}
-
-public struct EventInfo: Codable, Sendable {
-    public let id: String
-    public let name: String
-    public let venue: String?
-    public let scheduledDate: String?
-}
-
-public struct ManifestInfo: Codable, Sendable {
-    public let id: String
+    public let manifestId: String
     public let version: Int
+    public let eventId: String
+    public let eventName: String
     public let publishedAt: String?
-}
-
-public struct PackageInfo: Codable, Sendable {
-    public let id: String
-    public let name: String
-    public let priceAmount: Int
-    public let captureLimit: Int
-    public let selectionLimit: Int
+    public let assets: [CloudAssetDTO]?
 }
 
