@@ -251,12 +251,14 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         var frameSlots: [FrameSlot] = []
         
         if let template = template {
-            // Convert TemplateManifest slots to FrameSlots
+            // Convert TemplateManifest slots to FrameSlots (Convert Top-Left Y to CoreImage Bottom-Left Y)
+            let rawCanvasH = template.canvas.height
             for tSlot in template.slots {
+                let ciY = rawCanvasH - tSlot.y - tSlot.height
                 let slot = FrameSlot(
                     id: "slot-\(tSlot.index)",
                     x: tSlot.x * scale,
-                    y: tSlot.y * scale,
+                    y: ciY * scale,
                     width: tSlot.width * scale,
                     height: tSlot.height * scale,
                     rotationDegrees: tSlot.rotation
@@ -372,7 +374,9 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] frameDecode = true")
         }
         
-        let frameScaled = frameImage.transformed(by: CGAffineTransform(
+        // Normalize frameImage origin to (0,0) before scaling to prevent offset translation errors
+        let normalizedFrame = frameImage.transformed(by: CGAffineTransform(translationX: -frameImage.extent.origin.x, y: -frameImage.extent.origin.y))
+        let frameScaled = normalizedFrame.transformed(by: CGAffineTransform(
             scaleX: canvasSize.width / frameImage.extent.width,
             y: canvasSize.height / frameImage.extent.height
         ))
