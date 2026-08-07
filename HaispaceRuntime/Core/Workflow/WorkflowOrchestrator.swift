@@ -313,13 +313,13 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             let store = LocalAssetStore()
             guard let asset = store.getAsset(id: frameId) else {
                 print("[E10_AUDIT] Frame asset not found for id: \(frameId)")
-                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Workflow Resolved Path: FAILED (Asset Not Found in Store)")
+                await RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Workflow Resolved Path: FAILED (Asset Not Found in Store)")
                 return
             }
             let frameAssetPath = asset.fileURL(baseDirectory: store.baseDirectory()).path
             
             let exists = FileManager.default.fileExists(atPath: frameAssetPath)
-            RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Workflow Resolved Path: \(frameAssetPath) | Exists: \(exists)")
+            await RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Workflow Resolved Path: \(frameAssetPath) | Exists: \(exists)")
 
             // 2. Siapkan konfigurasi (Frame + Filter)
             let frameRef = FrameReference(frameId: frameId, assetPath: frameAssetPath)
