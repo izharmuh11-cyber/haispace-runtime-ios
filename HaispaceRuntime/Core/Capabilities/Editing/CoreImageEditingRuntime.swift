@@ -155,12 +155,18 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             RuntimeTimelineLogger.shared.logEvent("[RENDER][START] correlationId: \(correlationId.rawValue), photoInputsCount: \(photoInputs.count), isPreview: \(isPreview)")
         }
         
-        guard let firstPhotoPath = photoInputs.first,
-              let firstSourceImage = CIImage(contentsOf: URL(fileURLWithPath: firstPhotoPath)) else {
-            throw EditingRuntimeError.photoNotFound(path: photoInputs.first ?? "Empty photo list")
+        var sourceSize: CGSize
+        var firstSourceImage: CIImage?
+        
+        if let firstPhotoPath = photoInputs.first, let img = CIImage(contentsOf: URL(fileURLWithPath: firstPhotoPath)) {
+            firstSourceImage = img
+            sourceSize = img.extent.size
+        } else {
+            // Fallback to a transparent dummy image for frame-only preview
+            firstSourceImage = nil
+            sourceSize = CGSize(width: 1080, height: 1440) // Default typical size
         }
         
-        let sourceSize = firstSourceImage.extent.size
         var canvasSize: CGSize
         var templateManifest: TemplateManifest? = nil
         
@@ -204,7 +210,9 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             let offsetX = (canvasSize.width - scaledW) / 2
             let offsetY = (canvasSize.height - scaledH) / 2
             
-            compositeImage = firstSourceImage
+            let baseImg = firstSourceImage ?? CIImage(color: CIColor.clear).cropped(to: CGRect(origin: .zero, size: sourceSize))
+            
+            compositeImage = baseImg
                 .transformed(by: CGAffineTransform(scaleX: fitScale, y: fitScale))
                 .transformed(by: CGAffineTransform(translationX: offsetX, y: offsetY))
                 .cropped(to: canvasRect)
@@ -278,19 +286,30 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
         
         let adjustment = SlotAdjustment(cropGravityX: 0.5, cropGravityY: 0.5, cropZoom: 1.0)
         
+        // INVARIANT: Transparent dummy is ONLY used for missing 'photos' (initial preview mode).
+        // It MUST NOT be used to cover missing 'frames'. NO PHOTO ≠ ERROR, NO FRAME = ERROR.
         // Draw the source image into each slot
         for (index, slot) in frameSlots.enumerated() {
             // Gunakan foto yang sesuai dengan slot, atau fallback ke foto terakhir
-            let photoPath = photoInputs[min(index, photoInputs.count - 1)]
-            guard let sourceImage = CIImage(contentsOf: URL(fileURLWithPath: photoPath)) else { continue }
-            let srcSize = sourceImage.extent.size
+            var sourceImage: CIImage? = nil
+            if !photoInputs.isEmpty {
+                let photoIndex = min(index, photoInputs.count - 1)
+                if photoIndex >= 0 {
+                    let photoPath = photoInputs[photoIndex]
+                    sourceImage = CIImage(contentsOf: URL(fileURLWithPath: photoPath))
+                }
+            }
+            
+            // Default to transparent dummy image if no source is available
+            let safeSourceImage = sourceImage ?? CIImage(color: CIColor.clear).cropped(to: CGRect(origin: .zero, size: CGSize(width: 1080, height: 1440)))
+            let srcSize = safeSourceImage.extent.size
             
             let drawRect = compositor.calculateAutoFitRect(imageSize: srcSize, slot: slot, adjustment: adjustment)
             
             let scaleX = drawRect.drawWidth / srcSize.width
             let scaleY = drawRect.drawHeight / srcSize.height
             
-            var positioned = sourceImage
+            var positioned = safeSourceImage
                 .transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
                 .transformed(by: CGAffineTransform(translationX: drawRect.drawX, y: drawRect.drawY))
                 .cropped(to: drawRect.clipSlotRect)
@@ -343,20 +362,29 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Decoder Frame Image Exists: \(frameExists) | Bytes: \(frameSize) | URL: \(frameURL.path)")
         }
         
-        if frameExists, let frameImage = CIImage(contentsOf: frameURL) {
+        if !frameExists {
             Task { @MainActor in
-                RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] frameDecode = true")
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] frameDecode = false (File Missing)")
             }
-            let frameScaled = frameImage.transformed(by: CGAffineTransform(
-                scaleX: canvasSize.width / frameImage.extent.width,
-                y: canvasSize.height / frameImage.extent.height
-            ))
-            canvasImage = frameScaled.composited(over: canvasImage)
-        } else {
-            Task { @MainActor in
-                RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] frameDecode = false")
-            }
+            throw EditingRuntimeError.frameMissing(path: frameURL.path)
         }
+        
+        guard let frameImage = CIImage(contentsOf: frameURL) else {
+            Task { @MainActor in
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] frameDecode = false (Unreadable)")
+            }
+            throw EditingRuntimeError.frameUnreadable(path: frameURL.path)
+        }
+        
+        Task { @MainActor in
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_RENDER] frameDecode = true")
+        }
+        
+        let frameScaled = frameImage.transformed(by: CGAffineTransform(
+            scaleX: canvasSize.width / frameImage.extent.width,
+            y: canvasSize.height / frameImage.extent.height
+        ))
+        canvasImage = frameScaled.composited(over: canvasImage)
         
         return canvasImage.cropped(to: CGRect(origin: .zero, size: canvasSize))
     }
@@ -377,15 +405,15 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             )
         } else {
             guard let cgImage = context.createCGImage(clamped, from: canvasRect) else {
-                throw EditingRuntimeError.renderFailed(reason: "CIContext failed to create CGImage")
+                throw EditingRuntimeError.compositingFailed(reason: "CIContext failed to create CGImage")
             }
             let data = NSMutableData()
             guard let dest = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else {
-                throw EditingRuntimeError.renderFailed(reason: "CGImageDestination creation failed")
+                throw EditingRuntimeError.compositingFailed(reason: "CGImageDestination creation failed")
             }
             CGImageDestinationAddImage(dest, cgImage, [kCGImageDestinationLossyCompressionQuality: quality] as CFDictionary)
             guard CGImageDestinationFinalize(dest) else {
-                throw EditingRuntimeError.renderFailed(reason: "CGImageDestination finalize failed")
+                throw EditingRuntimeError.compositingFailed(reason: "CGImageDestination finalize failed")
             }
             try (data as Data).write(to: url)
         }
@@ -397,8 +425,9 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
 enum EditingRuntimeError: Error, LocalizedError {
     case pipelineNotPrepared
     case photoNotFound(path: String)
-    case frameAssetNotFound(path: String)
-    case renderFailed(reason: String)
+    case frameMissing(path: String)
+    case frameUnreadable(path: String)
+    case compositingFailed(reason: String)
     
     var errorDescription: String? {
         switch self {
@@ -406,10 +435,12 @@ enum EditingRuntimeError: Error, LocalizedError {
             return "CoreImage pipeline belum diinisialisasi. Panggil preparePipeline() terlebih dahulu."
         case .photoNotFound(let path):
             return "File foto tidak ditemukan: \(path)"
-        case .frameAssetNotFound(let path):
-            return "Frame asset PNG tidak ditemukan: \(path)"
-        case .renderFailed(let reason):
-            return "Render gagal: \(reason)"
+        case .frameMissing(let path):
+            return "Frame asset PNG tidak ditemukan secara fisik di lokal: \(path)"
+        case .frameUnreadable(let path):
+            return "Frame PNG gagal dibaca atau corrupt: \(path)"
+        case .compositingFailed(let reason):
+            return "Render komposit gagal: \(reason)"
         }
     }
 }

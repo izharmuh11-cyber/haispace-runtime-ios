@@ -24,6 +24,7 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
     private var activePhotoId: PhotoID?
     private var activeOutputReference: String?
     private(set) public var activePreviewReference: String?
+    private(set) public var activePreviewError: String?
     
     // Capabilities Injected via Protocols
     public let camera: CameraCapabilityProtocol
@@ -305,6 +306,35 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             // Fallback for old selectFilter if any
             break
             
+        case .retryAssetSync(let frameId, let filterId):
+            await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][RETRY_ASSET_SYNC] frameId: \(frameId)")
+            self.activePreviewError = "Menyinkronkan ulang frame..."
+            
+            do {
+                let keyStore = DeviceKeyStore()
+                let deviceToken = keyStore.getDeviceToken()
+                let debugEventId = UserDefaults.standard.string(forKey: "DEBUG_EVENT_ID") ?? "latest"
+                
+                let manifestService = ManifestService.shared
+                if let eventRuntime = try await manifestService.fetchLatestManifest(deviceToken: deviceToken, debugEventId: debugEventId) {
+                    if let cloudAssets = eventRuntime.assets, let targetAsset = cloudAssets.first(where: { $0.assetId == frameId }) {
+                        let store = LocalAssetStore()
+                        let syncService = AssetSyncService(store: store)
+                        try await syncService.syncAssets(from: [targetAsset])
+                        
+                        // If success, clear error and trigger updatePreview again
+                        self.activePreviewError = nil
+                        try await self.handleIntent(.updatePreview(frameId: frameId, filterId: filterId))
+                    } else {
+                        self.activePreviewError = "Asset tidak ditemukan di Cloud Manifest."
+                    }
+                } else {
+                    self.activePreviewError = "Gagal memuat Cloud Manifest."
+                }
+            } catch {
+                self.activePreviewError = "Gagal menyinkronkan frame: \(error.localizedDescription)"
+            }
+
         case .updatePreview(let frameId, let filterId):
             await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][UPDATE_PREVIEW_ENTER] frameId: \(frameId), filterId: \(filterId)")
             await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][CURRENT_STAGE] stage: \(currentStage.rawValue)")
@@ -327,14 +357,12 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             guard let asset = store.getAsset(id: frameId) else {
                 print("[E10_AUDIT] Frame asset not found for id: \(frameId)")
                 await RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Workflow Resolved Path: FAILED (Asset Not Found in Store)")
+                self.activePreviewReference = nil
+                self.activePreviewError = "Frame tidak ditemukan di perangkat. Silakan coba sinkronisasi ulang."
                 return
             }
             let frameAssetPath = asset.fileURL(baseDirectory: store.baseDirectory()).path
             
-            let exists = FileManager.default.fileExists(atPath: frameAssetPath)
-            await RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Workflow Resolved Path: \(frameAssetPath) | Exists: \(exists)")
-
-            // 2. Siapkan konfigurasi (Frame + Filter)
             let frameRef = FrameReference(frameId: frameId, assetPath: frameAssetPath)
             let filterRef: FilterReference? = filterId == "original" ? nil : FilterReference(filterId: filterId, lutFileName: "luts/\(filterId).cube")
             
@@ -343,22 +371,26 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
                 filter: filterRef
             )
             
-            // 3. Prepare pipeline dengan config terbaru
-            try await editing.prepare(sessionId: sessionId, configuration: editingConfig)
-            
-            // 4. Minta preview dari SEMUA foto yang ditangkap
-            let previewPhotos = await CapturedPhotoStore.shared.capturedPhotos
-            var previewPaths: [String] = []
-            for photo in previewPhotos {
-                if let path = photo.writeToTempFile() {
-                    previewPaths.append(path)
+            do {
+                try await editing.prepare(sessionId: sessionId, configuration: editingConfig)
+                
+                let previewPhotos = await CapturedPhotoStore.shared.capturedPhotos
+                var previewPaths: [String] = []
+                for photo in previewPhotos {
+                    if let path = photo.writeToTempFile() {
+                        previewPaths.append(path)
+                    }
                 }
-            }
-            if !previewPaths.isEmpty {
+                
                 let previewResult = try await editing.requestPreview(photoInputs: previewPaths, correlationId: correlationId)
                 self.activePreviewReference = previewResult.outputReference
+                self.activePreviewError = nil
                 await RuntimeTimelineLogger.shared.logEvent("[WORKFLOW][ACTIVE_PREVIEW_REFERENCE] path: \(previewResult.outputReference)")
                 print("[E10_AUDIT] Preview render finished (output: \(previewResult.outputReference))")
+            } catch {
+                self.activePreviewReference = nil
+                self.activePreviewError = error.localizedDescription
+                await RuntimeTimelineLogger.shared.logEvent("[FORENSIC][WORKFLOW_ERROR] Preview failed: \(error.localizedDescription)")
             }
             
         case .acceptPreview:

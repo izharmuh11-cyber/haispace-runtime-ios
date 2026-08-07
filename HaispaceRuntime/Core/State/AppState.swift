@@ -78,8 +78,10 @@ final class AppState {
         let remainingSeconds: Int
         /// Output path dari pratinjau rendering terakhir
         let latestPreviewReference: String?
+        /// Pesan error terakhir jika preview gagal
+        let latestPreviewError: String?
         
-        static let empty = SessionContext(maxPhotoCount: 10, minPhotoCount: 3, queueNumber: 1, guestName: "Guest", remainingSeconds: 0, latestPreviewReference: nil)
+        static let empty = SessionContext(maxPhotoCount: 10, minPhotoCount: 3, queueNumber: 1, guestName: "Guest", remainingSeconds: 0, latestPreviewReference: nil, latestPreviewError: nil)
     }
     
     /// Snapshot context session aktif — dibaca oleh View untuk package dan guest info.
@@ -148,14 +150,16 @@ final class AppState {
             let guest = await activeSession.identity.guest
             let remaining = await runtime.orchestrator.sessionTimerRemaining
             let previewRef = await runtime.orchestrator.activePreviewReference
-            RuntimeTimelineLogger.shared.logEvent("[APPSTATE][LATEST_PREVIEW_REFERENCE] path: \(previewRef ?? "nil")")
+            let previewErr = await runtime.orchestrator.activePreviewError
+            RuntimeTimelineLogger.shared.logEvent("[APPSTATE][LATEST_PREVIEW_REFERENCE] path: \(previewRef ?? "nil") | err: \(previewErr ?? "nil")")
             sessionContext = SessionContext(
                 maxPhotoCount: policy.maxCount,
                 minPhotoCount: policy.minSelectionCount,
                 queueNumber: guest.queueNumber,
                 guestName: guest.name,
                 remainingSeconds: remaining,
-                latestPreviewReference: previewRef
+                latestPreviewReference: previewRef,
+                latestPreviewError: previewErr
             )
         }
 
@@ -263,7 +267,8 @@ final class AppState {
                         queueNumber: self.sessionContext.queueNumber,
                         guestName: self.sessionContext.guestName,
                         remainingSeconds: remaining,
-                        latestPreviewReference: self.sessionContext.latestPreviewReference
+                        latestPreviewReference: self.sessionContext.latestPreviewReference,
+                        latestPreviewError: self.sessionContext.latestPreviewError
                     )
                 }
             }
@@ -319,7 +324,8 @@ extension AppState {
             queueNumber: 42,
             guestName: "Sarah",
             remainingSeconds: 180,
-            latestPreviewReference: nil
+            latestPreviewReference: nil,
+            latestPreviewError: nil
         )
         let mockPhotos = CapturedPhoto.mockPhotos(count: 5)
         for photo in mockPhotos {

@@ -127,7 +127,34 @@ public struct EditingView: View {
 
     private var previewArea: some View {
         ZStack {
-            if let previewRef = appState.sessionContext.latestPreviewReference {
+            if let errorMsg = appState.sessionContext.latestPreviewError {
+                let _ = RuntimeTimelineLogger.shared.logEvent("[UI][PREVIEW_ERROR] \(errorMsg)")
+                VStack(spacing: Spacing.md) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.red)
+                    Text("Frame tidak dapat dimuat")
+                        .font(.headline)
+                        .foregroundColor(.black)
+                    Text(errorMsg)
+                        .font(.footnote)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, Spacing.lg)
+                    
+                    Button("Coba Lagi") {
+                        let frameId = templateStore.templates.first(where: { $0.id == selectedTemplateId })?.frameAssetId ?? ""
+                        Task { try? await appState.send(.retryAssetSync(frameId: frameId, filterId: selectedFilterId)) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                }
+                .frame(width: 210, height: 360)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+                
+            } else if let previewRef = appState.sessionContext.latestPreviewReference {
                 let _ = RuntimeTimelineLogger.shared.logEvent("[UI][PREVIEW_IMAGE_LOAD] path: \(previewRef)")
                 if let uiImage = UIImage(contentsOfFile: previewRef) {
                     let _ = RuntimeTimelineLogger.shared.logEvent("[UI][PREVIEW_IMAGE_LOAD_SUCCESS] size: \(uiImage.size.width)x\(uiImage.size.height)")
