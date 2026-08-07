@@ -40,11 +40,11 @@ public actor ManifestService {
             request.setValue("application/json", forHTTPHeaderField: "Accept")
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         } else if let eventId = debugEventId {
-            // Publik endpoint untuk mode Debug
+            // Endpoint DDD Runtime Manifest resmi
             if eventId == "latest" {
-                endpoint = baseURL.appendingPathComponent("/events/public/latest/manifest")
+                endpoint = baseURL.appendingPathComponent("/v1/runtime/manifest")
             } else {
-                endpoint = baseURL.appendingPathComponent("/events/public/\(eventId)/manifest")
+                endpoint = URL(string: "\(baseURL.absoluteString)/v1/runtime/manifest?eventId=\(eventId)")!
             }
             request = URLRequest(url: endpoint)
             request.httpMethod = "GET"
