@@ -33,16 +33,16 @@ public class AssetSyncService {
     
     private func syncSingleAsset(_ cloudAsset: CloudAssetDTO) async throws {
         // Cek apakah sudah ada di lokal
-        if let local = store.getAsset(id: cloudAsset.id) {
+        if let local = store.getAsset(id: cloudAsset.assetId) {
             // Delta update: Cek kesamaan checksum
             if local.checksum == cloudAsset.checksum {
                 // Checksum cocok, tidak perlu download ulang
-                await RuntimeTimelineLogger.shared.auditLog(step: "Asset Sync", status: "CACHE_HIT", detail: "\(cloudAsset.id)")
+                await RuntimeTimelineLogger.shared.auditLog(step: "Asset Sync", status: "CACHE_HIT", detail: "\(cloudAsset.assetId)")
                 return
             }
         }
         
-        await RuntimeTimelineLogger.shared.auditLog(step: "Asset Sync", status: "CACHE_MISS", detail: "\(cloudAsset.id)")
+        await RuntimeTimelineLogger.shared.auditLog(step: "Asset Sync", status: "CACHE_MISS", detail: "\(cloudAsset.assetId)")
         
         // Memerlukan unduhan
         guard let urlString = cloudAsset.downloadUrl, let url = URL(string: urlString) else {
@@ -66,7 +66,7 @@ public class AssetSyncService {
             // Asumsi checksum dari backend berupa hex string murni.
             let cleanExpected = expectedChecksum.replacingOccurrences(of: "sha256:", with: "").lowercased()
             if hashString != cleanExpected {
-                await RuntimeTimelineLogger.shared.auditLog(step: "Checksum Validation", status: "FAILED", detail: "Mismatch for \(cloudAsset.id)")
+                await RuntimeTimelineLogger.shared.auditLog(step: "Checksum Validation", status: "FAILED", detail: "Mismatch for \(cloudAsset.assetId)")
                 throw AssetSyncError.checksumMismatch
             }
         }
