@@ -44,8 +44,11 @@ public actor CheckoutOrchestrator {
         }
         
         let photoRef = PhotoReference(photoId: PhotoID(rawValue: firstPhoto.id), sourcePath: sourcePath)
-        let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-        let frameAssetPath = cachesDir.appendingPathComponent("HaispaceFrames/\(frameId).png").path
+        let store = LocalAssetStore()
+        guard let asset = store.getAsset(id: frameId) else {
+            throw WorkflowError.sessionNotActive // Atur throw yang sesuai
+        }
+        let frameAssetPath = asset.fileURL(baseDirectory: store.baseDirectory()).path
         
         let editingConfig = EditingConfiguration(
             frame: FrameReference(frameId: frameId, assetPath: frameAssetPath)

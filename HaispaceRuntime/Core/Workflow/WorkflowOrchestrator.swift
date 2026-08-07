@@ -189,8 +189,11 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             
             // M-012.5 ②: Frame asset path ditentukan di Orchestrator (yang tahu folder convention)
             // Runtime hanya menerima path lengkap — tidak tahu ini ada di Caches atau Documents
-            let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-            let frameAssetPath = cachesDir.appendingPathComponent("HaispaceFrames/\(frameId).png").path
+            let store = LocalAssetStore()
+            guard let asset = store.getAsset(id: frameId) else {
+                throw WorkflowError.sessionNotActive
+            }
+            let frameAssetPath = asset.fileURL(baseDirectory: store.baseDirectory()).path
             
             let editingConfig = EditingConfiguration(
                 frame: FrameReference(frameId: frameId, assetPath: frameAssetPath)
@@ -306,10 +309,14 @@ public actor WorkflowOrchestrator: @preconcurrency WorkflowOrchestratorProtocol 
             guard currentStage == .templateSelection, let sessionId = activeSessionId, let correlationId = currentCorrelationId else { return }
             print("[E10_AUDIT] Preview render started (frame: \(frameId))")
             
-            // 1. Dapatkan path Frame Asset
-            let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-            let frameAssetPath = cachesDir.appendingPathComponent("HaispaceFrames/\(frameId).png").path
-            
+            // 1. Dapatkan path Frame Asset dari LocalAssetStore
+            let store = LocalAssetStore()
+            guard let asset = store.getAsset(id: frameId) else {
+                print("[E10_AUDIT] Frame asset not found for id: \(frameId)")
+                return
+            }
+            let frameAssetPath = asset.fileURL(baseDirectory: store.baseDirectory()).path
+
             // 2. Siapkan konfigurasi (Frame + Filter)
             let frameRef = FrameReference(frameId: frameId, assetPath: frameAssetPath)
             let filterRef: FilterReference? = filterId == "original" ? nil : FilterReference(filterId: filterId, lutFileName: "luts/\(filterId).cube")
