@@ -22,7 +22,7 @@ public struct EditingView: View {
         public let name: String
     }
 
-    @State private var frames: [LocalAsset] = []
+    @StateObject private var templateStore = TemplateStore.shared
     
     private let filters: [FilterOption] = [
         FilterOption(id: "original", name: "Original"),
@@ -31,7 +31,7 @@ public struct EditingView: View {
         FilterOption(id: "soft_glow", name: "Soft Glow")
     ]
 
-    @State private var selectedFrameId: String = ""
+    @State private var selectedTemplateId: String = ""
     @State private var selectedFilterId: String = "original"
     @State private var selectedSegment: Int = 0 // 0: Frame, 1: Filter
     @State private var isLoadingPreview: Bool = false
@@ -73,27 +73,37 @@ public struct EditingView: View {
         }
         .onAppear {
             print("[E10_AUDIT] EditingView appeared")
-            let store = LocalAssetStore()
-            let allAssets = store.getAllAssets()
-            self.frames = allAssets.filter { $0.role.lowercased() == "frame" || $0.assetType.lowercased() == "frame" }
+            let templates = templateStore.templates
             
-            RuntimeTimelineLogger.shared.logEvent("[FORENSIC] EditingView All Assets: \(allAssets.count)")
-            RuntimeTimelineLogger.shared.logEvent("[FORENSIC] EditingView Frame Assets: \(self.frames.count)")
+            RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_UI] templatesLoaded: \(templates.count)")
             
-            print("[E10_AUDIT] Frame loaded (count: \(self.frames.count))")
-            if let firstFrame = self.frames.first {
-                self.selectedFrameId = firstFrame.id
-                let fileURL = firstFrame.fileURL(baseDirectory: store.baseDirectory()).path
-                let exists = FileManager.default.fileExists(atPath: fileURL)
-                let size = (try? FileManager.default.attributesOfItem(atPath: fileURL)[.size] as? Int64) ?? 0
-                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Selected Asset: \(firstFrame.id) | Exists: \(exists) | Bytes: \(size)")
-                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Local Path: \(fileURL)")
+            print("[E10_AUDIT] Templates loaded (count: \(templates.count))")
+            if let firstTemplate = templates.first {
+                self.selectedTemplateId = firstTemplate.id
+                
+                let store = LocalAssetStore()
+                if let asset = store.getAsset(byId: firstTemplate.frameAssetId) {
+                    let fileURL = asset.fileURL(baseDirectory: store.baseDirectory())
+                    let uiImage = UIImage(contentsOfFile: fileURL.path)
+                    let decodeSuccess = uiImage != nil
+                    
+                    RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_UI] templateId: \(firstTemplate.id)")
+                    RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_UI] templateName: \(firstTemplate.name)")
+                    RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_UI] slotCount: \(firstTemplate.slots.count)")
+                    RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_UI] frameAssetId: \(firstTemplate.frameAssetId)")
+                    RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_UI] frameLocalPath: \(fileURL.path)")
+                    RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_UI] frameUIImageDecode: \(decodeSuccess)")
+                    RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_UI] selectedTemplateId: \(self.selectedTemplateId)")
+                } else {
+                    RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_UI] Asset missing for frameAssetId: \(firstTemplate.frameAssetId)")
+                }
+                
                 requestPreviewUpdate()
             } else {
-                RuntimeTimelineLogger.shared.logEvent("[FORENSIC] Selected Asset: NONE (frames array is empty)")
+                RuntimeTimelineLogger.shared.logEvent("[FORENSIC][TEMPLATE_UI] Selected Asset: NONE (templates array is empty)")
             }
         }
-        .onChange(of: selectedFrameId) { _, _ in
+        .onChange(of: selectedTemplateId) { _, _ in
             requestPreviewUpdate()
         }
         .onChange(of: selectedFilterId) { _, _ in
@@ -102,11 +112,14 @@ public struct EditingView: View {
     }
     
     private func requestPreviewUpdate() {
-        guard !selectedFrameId.isEmpty else { return }
-        print("[E10_AUDIT] Preview render requested for frame: \(selectedFrameId), filter: \(selectedFilterId)")
+        guard !selectedTemplateId.isEmpty else { return }
+        let selectedTemplate = templateStore.templates.first(where: { $0.id == selectedTemplateId })
+        let frameId = selectedTemplate?.frameAssetId ?? ""
+        print("[E10_AUDIT] Preview render requested for template: \(selectedTemplateId), frame: \(frameId), filter: \(selectedFilterId)")
         isLoadingPreview = true
         Task {
-            try? await appState.send(.updatePreview(frameId: selectedFrameId, filterId: selectedFilterId))
+            // Tetap pass frameId ke system yang ada agar tidak memecah CoreImageEditingRuntime
+            try? await appState.send(.updatePreview(frameId: frameId, filterId: selectedFilterId))
             await MainActor.run { isLoadingPreview = false }
         }
     }
@@ -175,21 +188,44 @@ public struct EditingView: View {
     @ViewBuilder
     private var optionsCarousel: some View {
         if selectedSegment == 0 {
-            HStack(spacing: Spacing.md) {
-                ForEach(frames, id: \.id) { frame in
-                    Button {
-                        withAnimation(Motion.screen) { selectedFrameId = frame.id }
-                    } label: {
-                        Text(frame.name)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.md) {
+                    if templateStore.templates.isEmpty {
+                        Text("No Templates Available")
                             .font(AppFont.footnote)
-                            .foregroundStyle(selectedFrameId == frame.id ? AppTheme.Brand.textDark : AppTheme.Brand.textPrimary)
-                            .padding(.horizontal, Spacing.lg)
-                            .padding(.vertical, Spacing.sm)
-                            .background(selectedFrameId == frame.id ? AppTheme.Brand.textPrimary : AppTheme.Brand.textPrimary.opacity(0.1))
-                            .clipShape(Capsule())
+                            .foregroundStyle(AppTheme.Brand.textSecondary)
+                    } else {
+                        ForEach(templateStore.templates, id: \.id) { template in
+                            Button {
+                                withAnimation(Motion.screen) { selectedTemplateId = template.id }
+                            } label: {
+                                VStack(spacing: 4) {
+                                    if let asset = LocalAssetStore().getAsset(byId: template.frameAssetId),
+                                       let uiImage = UIImage(contentsOfFile: asset.fileURL(baseDirectory: LocalAssetStore().baseDirectory()).path) {
+                                        Image(uiImage: uiImage)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(height: 60)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 40, height: 60)
+                                            .overlay(Text("No img").font(.system(size: 8)))
+                                    }
+                                }
+                                .padding(Spacing.xs)
+                                .background(selectedTemplateId == template.id ? AppTheme.Brand.primary.opacity(0.2) : Color.clear)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(selectedTemplateId == template.id ? AppTheme.Brand.primary : Color.clear, lineWidth: 2)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("Template \(template.name)")
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Frame \(frame.name)")
                 }
             }
         } else {
