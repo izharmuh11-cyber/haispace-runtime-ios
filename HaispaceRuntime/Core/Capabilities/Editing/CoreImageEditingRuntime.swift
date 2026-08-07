@@ -78,7 +78,8 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             correlationId: correlationId,
             scale: previewScale,
             quality: 0.75,
-            suffix: "_preview"
+            suffix: "_preview",
+            isPreview: true
         )
         
         let durationMs = Date().timeIntervalSince(startTime) * 1000
@@ -104,7 +105,8 @@ public final class CoreImageEditingRuntime: EditingRuntimeProtocol, @unchecked S
             correlationId: correlationId,
             scale: 1.0,
             quality: configuration.jpegQuality,
-            suffix: "_export"
+            suffix: "_export",
+            isPreview: false
         )
         
         let durationMs = Date().timeIntervalSince(startTime) * 1000
